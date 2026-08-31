@@ -1,0 +1,46 @@
+import 'server-only';
+import { redirect } from 'next/navigation';
+import { prisma } from '@/server/db/prisma';
+import { getAuthUser, can, type AuthUser } from './context';
+import type { Capability } from '@/lib/constants';
+
+/**
+ * Server-side page guards — the SECOND gate, and the one that actually
+ * decides.
+ *
+ * Edge middleware only checks that a cookie exists; it has no database and so
+ * cannot re-read role or account status. These run in the Node runtime during
+ * server rendering, where the real user can be resolved.
+ *
+ * Every protected page calls one of these. A page that forgets to is a page
+ * that leaks, so there is no "optional" variant that silently returns null for
+ * a signed-out visitor.
+ */
+
+export type PageUser = AuthUser & { roleNames: string[] };
+
+/** Resolves the user or redirects to sign in. */
+export async function requirePageUser(): Promise<PageUser> {
+  const user = await getAuthUser();
+  if (!user) redirect('/login');
+
+  const roles = await prisma.role.findMany({
+    where: { key: { in: user.roleKeys } },
+    select: { name: true },
+  });
+
+  return { ...user, roleNames: roles.map((r) => r.name) };
+}
+
+/**
+ * Resolves the user and asserts a capability, or sends them to /unauthorized.
+ *
+ * Deliberately a redirect rather than a 404: the person is legitimately signed
+ * in and needs to understand that their ROLE is the limit, not that the page
+ * is missing.
+ */
+export async function requirePageCapability(...capabilities: Capability[]): Promise<PageUser> {
+  const user = await requirePageUser();
+  if (!can(user, ...capabilities)) redirect('/unauthorized');
+  return user;
+}

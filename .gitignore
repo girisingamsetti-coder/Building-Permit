@@ -1,0 +1,32 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment — .env.example is committed, real env files are not
+.env
+.env.local
+.env.*.local
+.env.supabase
+
+# Local object storage (STORAGE_DRIVER=local)
+.storage/
+
+# Test + coverage output
+coverage/
+test-results/
+playwright-report/
+.vitest/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*

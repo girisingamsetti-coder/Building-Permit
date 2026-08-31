@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  verify:
+    name: Lint · typecheck · test · build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lams
+          POSTGRES_PASSWORD: lams
+          POSTGRES_DB: lams_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lams"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://lams:lams@localhost:5432/lams_test?schema=public
+      DIRECT_URL: postgresql://lams:lams@localhost:5432/lams_test?schema=public
+      AUTH_SECRET: ci-only-secret-at-least-32-characters-long
+      CRON_SECRET: ci-only-cron-secret
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Every migration is applied to a real Postgres. A migration that only
+      # works against a developer's existing database fails here.
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Create shadow database
+        run: PGPASSWORD=lams psql -h localhost -U lams -d lams_test -c 'CREATE DATABASE lams_shadow;'
+
+      # Catches a schema.prisma edited without a matching migration.
+      - name: Verify schema is in sync with migrations
+        run: |
+          npx prisma migrate diff \
+            --from-migrations prisma/migrations \
+            --to-schema-datamodel prisma/schema.prisma \
+            --shadow-database-url "postgresql://lams:lams@localhost:5432/lams_shadow?schema=public" \
+            --exit-code
+
+      # Integration tests assert that the seeded grants match the RBAC matrix,
+      # so the seed has to run before them.
+      - name: Seed
+        run: npm run db:seed
+        env:
+          DEMO_MODE: 'true'
+          DEMO_PASSWORD: Demo@12345
+
+      - name: Test
+        run: npm run test
+
+      # Exercises the foundations against the real database: transaction-aware
+      # audit, the hash chain, append-only triggers, the job queue and the
+      # financial CHECK constraints. Proves the hand-written constraints
+      # migration actually applied, which `migrate deploy` alone does not.
+      - name: Smoke check
+        run: npm run smoke
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+          # Guardrails that would otherwise refuse a production build config.
+          STORAGE_PROVIDER: s3
+          S3_BUCKET: ci
+          ALLOW_MOCK_SCRUTINY_IN_PRODUCTION: 'true'
+          DEMO_MODE: 'false'
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm audit --audit-level=high

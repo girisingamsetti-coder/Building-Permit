@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Design tokens from docs/06-frontend.md K.2.
+ *
+ * Status colours have fixed meanings and are never used decoratively. Every
+ * badge carries text as well as colour — colour is never the only signal.
+ */
+
+@layer base {
+  :root {
+    /* Neutrals — the interface is 90% these */
+    --bg: 247 248 250;
+    --surface: 255 255 255;
+    --surface-sunk: 241 243 246;
+    --border: 226 229 234;
+    --border-strong: 203 209 218;
+    --text: 20 24 31;
+    --text-muted: 90 100 114;
+    --text-subtle: 139 149 164;
+
+    /* Brand */
+    --primary: 27 77 143;
+    --primary-hover: 22 64 111;
+    --primary-subtle: 232 238 247;
+    --primary-text: 255 255 255;
+
+    /* Status */
+    --neutral: 90 100 114;
+    --neutral-bg: 238 240 243;
+    --info: 27 111 168;
+    --info-bg: 230 241 249;
+    --success: 26 127 75;
+    --success-bg: 230 244 236;
+    --warning: 168 106 0;
+    --warning-bg: 253 241 224;
+    --danger: 179 38 30;
+    --danger-bg: 251 234 233;
+    --purple: 107 78 168;
+    --purple-bg: 240 236 248;
+
+    --radius-sm: 4px;
+    --radius: 6px;
+    --radius-lg: 8px;
+  }
+
+  :root[data-theme='dark'] {
+    --bg: 12 17 23;
+    --surface: 18 25 33;
+    --surface-sunk: 14 21 28;
+    --border: 35 45 56;
+    --border-strong: 54 67 79;
+    --text: 229 235 241;
+    --text-muted: 163 176 189;
+    --text-subtle: 117 131 143;
+
+    --primary: 95 180 212;
+    --primary-hover: 143 205 229;
+    --primary-subtle: 20 48 61;
+    --primary-text: 12 17 23;
+
+    --neutral: 163 176 189;
+    --neutral-bg: 30 38 47;
+    --info: 95 180 212;
+    --info-bg: 20 48 61;
+    --success: 95 201 141;
+    --success-bg: 22 41 31;
+    --warning: 217 162 94;
+    --warning-bg: 46 36 23;
+    --danger: 240 131 122;
+    --danger-bg: 44 25 23;
+    --purple: 168 148 214;
+    --purple-bg: 38 32 54;
+  }
+
+  * {
+    @apply border-[rgb(var(--border))];
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Digits line up in every table and money field. */
+  table,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--primary));
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

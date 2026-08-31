@@ -1,0 +1,521 @@
+import type { PrismaClient } from '@prisma/client';
+
+/**
+ * Notification templates — docs/07-subsystems.md M.2 and M.3, as data.
+ *
+ * ── Written for the person receiving them ────────────────────────────────
+ *
+ * An SMS is 160 characters and arrives on a phone with no context. It has to
+ * say which application, what is wanted, and by when — in that order, because
+ * that is the order the reader needs them. An email can afford the courtesy of
+ * a sentence. An in-app message sits next to the thing it is about, so it is
+ * the shortest of the three.
+ *
+ * ── Every SMS needs a DLT template id ────────────────────────────────────
+ *
+ * `providerTemplateId` is EMPTY here and the SMS adapter refuses to send
+ * without one. That is not an oversight: DLT ids are issued by the operator
+ * against a registered account, nobody has told us whose account that is
+ * (Q13), and inventing them would produce messages the carrier silently drops.
+ * With the mock provider the id is not required, so the demo works; the moment
+ * a real gateway is configured, every unregistered template shows up as a
+ * SKIPPED row naming itself. A gap you can see beats a message you cannot.
+ */
+
+type TemplateSeed = {
+  eventCode: string;
+  channel: 'IN_APP' | 'EMAIL' | 'SMS';
+  subject: string;
+  body: string;
+  variables: string[];
+};
+
+const A = 'applicationNumber';
+
+const TEMPLATES: TemplateSeed[] = [
+  // ── The applicant's own progress ───────────────────────────────────────
+  {
+    eventCode: 'APPLICATION_CREATED',
+    channel: 'IN_APP',
+    subject: 'Application {{applicationNumber}} created',
+    body: 'Your application has been created. Complete the remaining steps to file it.',
+    variables: [A],
+  },
+  {
+    eventCode: 'DRAWING_UPLOADED',
+    channel: 'IN_APP',
+    subject: 'Drawing uploaded',
+    body: 'The drawing for {{applicationNumber}} has been uploaded and sent for scrutiny.',
+    variables: [A],
+  },
+  {
+    eventCode: 'SCRUTINY_PASSED',
+    channel: 'IN_APP',
+    subject: 'Scrutiny passed',
+    body: 'The drawing for {{applicationNumber}} passed scrutiny. Upload the required documents next.',
+    variables: [A],
+  },
+  {
+    eventCode: 'SCRUTINY_PASSED',
+    channel: 'EMAIL',
+    subject: 'Scrutiny passed — {{applicationNumber}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'The drawing submitted with application {{applicationNumber}} has passed automated scrutiny.\n\n' +
+      'The next step is the document checklist: {{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'recipientName', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'SCRUTINY_FAILED',
+    channel: 'IN_APP',
+    subject: 'Scrutiny failed',
+    body: 'The drawing for {{applicationNumber}} did not pass scrutiny. Correct it and upload a new version.',
+    variables: [A],
+  },
+  {
+    eventCode: 'SCRUTINY_FAILED',
+    channel: 'EMAIL',
+    subject: 'Scrutiny did not pass — {{applicationNumber}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'The drawing submitted with application {{applicationNumber}} did not pass scrutiny.\n\n' +
+      'The findings are listed on the scrutiny report. A correction is uploaded as a new version — the ' +
+      'previous one is kept: {{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'recipientName', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'SCRUTINY_FAILED',
+    channel: 'SMS',
+    subject: '',
+    body:
+      'Application {{applicationNumber}}: the drawing did not pass scrutiny. ' +
+      'Please correct it and upload a new version. - {{orgShortName}}',
+    variables: [A, 'orgShortName'],
+  },
+  {
+    eventCode: 'DOCUMENTS_COMPLETED',
+    channel: 'IN_APP',
+    subject: 'Documents complete',
+    body: 'Every required document for {{applicationNumber}} is in. A fee demand can now be raised.',
+    variables: [A],
+  },
+
+  // ── Money ──────────────────────────────────────────────────────────────
+  {
+    eventCode: 'FEE_GENERATED',
+    channel: 'IN_APP',
+    subject: 'Fee demand {{demandNumber}} raised',
+    body: 'A fee of {{total}} is payable on {{applicationNumber}}.',
+    variables: [A, 'demandNumber', 'total'],
+  },
+  {
+    eventCode: 'FEE_GENERATED',
+    channel: 'EMAIL',
+    subject: 'Fee demand {{demandNumber}} for application {{applicationNumber}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'A fee of Rs. {{total}} has been raised against application {{applicationNumber}} under demand ' +
+      '{{demandNumber}}.\n\n' +
+      'The itemised breakdown and the payment link are here: {{link}}\n\n' +
+      'The application goes to the department once the fee has been paid in full.\n\n' +
+      '{{orgName}}',
+    variables: [A, 'demandNumber', 'total', 'recipientName', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'FEE_GENERATED',
+    channel: 'SMS',
+    subject: '',
+    body:
+      'Application {{applicationNumber}}: fee of Rs.{{total}} is payable under demand {{demandNumber}}. ' +
+      'Pay online to send the file to the department. - {{orgShortName}}',
+    variables: [A, 'demandNumber', 'total', 'orgShortName'],
+  },
+  {
+    eventCode: 'PAYMENT_SUCCESSFUL',
+    channel: 'IN_APP',
+    subject: 'Payment received',
+    body: 'Payment of {{amount}} received for {{applicationNumber}}. Receipt {{receiptNumber}}.',
+    variables: [A, 'amount', 'receiptNumber'],
+  },
+  {
+    eventCode: 'PAYMENT_SUCCESSFUL',
+    channel: 'EMAIL',
+    subject: 'Payment received — {{applicationNumber}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'We have received Rs. {{amount}} against application {{applicationNumber}}.\n' +
+      'Your receipt number is {{receiptNumber}}.\n\n' +
+      'The receipt can be downloaded here: {{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'amount', 'receiptNumber', 'recipientName', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'PAYMENT_SUCCESSFUL',
+    channel: 'SMS',
+    subject: '',
+    body:
+      'Rs.{{amount}} received for application {{applicationNumber}}. Receipt {{receiptNumber}}. ' +
+      '- {{orgShortName}}',
+    variables: [A, 'amount', 'receiptNumber', 'orgShortName'],
+  },
+  {
+    eventCode: 'PAYMENT_FAILED',
+    channel: 'IN_APP',
+    subject: 'Payment did not go through',
+    body: 'The payment for {{applicationNumber}} was not completed. You can try again.',
+    variables: [A],
+  },
+  {
+    eventCode: 'PAYMENT_FAILED',
+    channel: 'EMAIL',
+    subject: 'Payment not completed — {{applicationNumber}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'The payment attempt against application {{applicationNumber}} was not completed, and nothing ' +
+      'has been charged.\n\n' +
+      'You can try again here: {{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'recipientName', 'link', 'orgName'],
+  },
+
+  // ── Movement ───────────────────────────────────────────────────────────
+  {
+    eventCode: 'APPLICATION_FORWARDED',
+    channel: 'IN_APP',
+    subject: 'Application moved on',
+    body: '{{applicationNumber}} has been sent to the next desk. Nothing is needed from you.',
+    variables: [A],
+  },
+  {
+    eventCode: 'APPLICATION_RETURNED',
+    channel: 'IN_APP',
+    subject: 'Application returned',
+    body: '{{applicationNumber}} has been sent back a stage. {{remarks}}',
+    variables: [A, 'remarks'],
+  },
+  {
+    eventCode: 'APPLICATION_RETURNED',
+    channel: 'EMAIL',
+    subject: 'Application {{applicationNumber}} has been returned',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'Application {{applicationNumber}} has been returned to an earlier stage of review.\n\n' +
+      'Reason given: {{remarks}}\n\n' +
+      '{{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'recipientName', 'remarks', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'TASK_ASSIGNED',
+    channel: 'IN_APP',
+    subject: 'A file has arrived at your desk',
+    body: '{{applicationNumber}} is now at {{stageName}} and is waiting to be worked.',
+    variables: [A, 'stageName'],
+  },
+  {
+    eventCode: 'TASK_ASSIGNED',
+    channel: 'EMAIL',
+    subject: '{{applicationNumber}} is waiting at {{stageName}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'Application {{applicationNumber}} has arrived at {{stageName}}.\n\n' +
+      'Open it here: {{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'stageName', 'recipientName', 'link', 'orgName'],
+  },
+
+  // ── Shortfalls — the ones this phase exists for ────────────────────────
+  //
+  // All three channels on every one of them, because a shortfall is the point
+  // at which an application stops moving and stays stopped until somebody
+  // acts. An applicant who does not hear about it has no way of knowing.
+  {
+    eventCode: 'SHORTFALL_RAISED',
+    channel: 'IN_APP',
+    subject: '{{title}} — {{shortfallNumber}}',
+    body: '{{shortfallReason}} {{requiredAction}}',
+    variables: ['title', 'shortfallNumber', 'shortfallReason', 'requiredAction'],
+  },
+  {
+    eventCode: 'SHORTFALL_RAISED',
+    channel: 'EMAIL',
+    subject: 'Action required on application {{applicationNumber}} — {{shortfallNumber}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'The department has raised a shortfall against application {{applicationNumber}}.\n\n' +
+      '{{title}}\n' +
+      '{{shortfallReason}}\n\n' +
+      'What is required: {{requiredAction}}\n' +
+      'Raised by: {{officerName}}\n\n' +
+      'Respond here: {{link}}\n\n' +
+      'The application cannot be approved until this has been settled.\n\n' +
+      '{{orgName}}',
+    variables: [
+      A,
+      'recipientName',
+      'title',
+      'shortfallNumber',
+      'shortfallReason',
+      'requiredAction',
+      'officerName',
+      'link',
+      'orgName',
+    ],
+  },
+  {
+    eventCode: 'SHORTFALL_RAISED',
+    channel: 'SMS',
+    subject: '',
+    body:
+      'Application {{applicationNumber}}: {{title}}. {{requiredAction}} ' +
+      'Ref {{shortfallNumber}}. - {{orgShortName}}',
+    variables: [A, 'title', 'requiredAction', 'shortfallNumber', 'orgShortName'],
+  },
+  {
+    eventCode: 'SHORTFALL_RESPONDED',
+    channel: 'IN_APP',
+    subject: 'A shortfall response is waiting for you',
+    body: '{{applicationNumber}}: the applicant has answered {{shortfallNumber}}. Attempt {{attemptNo}}.',
+    variables: [A, 'shortfallNumber', 'attemptNo'],
+  },
+  {
+    eventCode: 'SHORTFALL_RESPONDED',
+    channel: 'EMAIL',
+    subject: 'Response to {{shortfallNumber}} on application {{applicationNumber}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'The applicant has responded to shortfall {{shortfallNumber}} on application ' +
+      '{{applicationNumber}} (attempt {{attemptNo}}).\n\n' +
+      'Their response: {{remarks}}\n\n' +
+      'Accept or reject it here: {{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'recipientName', 'shortfallNumber', 'attemptNo', 'remarks', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'SHORTFALL_RESOLVED',
+    channel: 'IN_APP',
+    subject: 'Shortfall {{shortfallNumber}} settled',
+    body: 'The department has accepted your response on {{applicationNumber}}. {{remarks}}',
+    variables: [A, 'shortfallNumber', 'remarks'],
+  },
+  {
+    eventCode: 'SHORTFALL_RESOLVED',
+    channel: 'EMAIL',
+    subject: 'Shortfall {{shortfallNumber}} has been settled — {{applicationNumber}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'Shortfall {{shortfallNumber}} on application {{applicationNumber}} has been settled.\n\n' +
+      'Officer’s remarks: {{remarks}}\n\n' +
+      'The application has resumed its review: {{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'recipientName', 'shortfallNumber', 'remarks', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'SHORTFALL_RESOLVED',
+    channel: 'SMS',
+    subject: '',
+    body:
+      'Application {{applicationNumber}}: shortfall {{shortfallNumber}} has been settled and the ' +
+      'review has resumed. - {{orgShortName}}',
+    variables: [A, 'shortfallNumber', 'orgShortName'],
+  },
+  {
+    eventCode: 'SHORTFALL_REJECTED',
+    channel: 'IN_APP',
+    subject: 'Your response was not accepted',
+    body: '{{shortfallNumber}} on {{applicationNumber}} is still outstanding. {{remarks}}',
+    variables: [A, 'shortfallNumber', 'remarks'],
+  },
+  {
+    eventCode: 'SHORTFALL_REJECTED',
+    channel: 'EMAIL',
+    subject: 'Response not accepted — {{shortfallNumber}} on {{applicationNumber}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'Your response to shortfall {{shortfallNumber}} on application {{applicationNumber}} has not ' +
+      'been accepted.\n\n' +
+      'Officer’s remarks: {{remarks}}\n\n' +
+      'You can respond again here: {{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'recipientName', 'shortfallNumber', 'remarks', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'SHORTFALL_REJECTED',
+    channel: 'SMS',
+    subject: '',
+    body:
+      'Application {{applicationNumber}}: your response to {{shortfallNumber}} was not accepted. ' +
+      'Please check the details and respond again. - {{orgShortName}}',
+    variables: [A, 'shortfallNumber', 'orgShortName'],
+  },
+
+  // ── The decision ───────────────────────────────────────────────────────
+  {
+    eventCode: 'APPLICATION_APPROVED',
+    channel: 'IN_APP',
+    subject: 'Application approved',
+    body: '{{applicationNumber}} has been approved. The approval order is being prepared.',
+    variables: [A],
+  },
+  {
+    eventCode: 'APPLICATION_APPROVED',
+    channel: 'EMAIL',
+    subject: 'Application {{applicationNumber}} has been approved',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'Building permission has been granted on application {{applicationNumber}}.\n\n' +
+      'The approval order will be available here shortly: {{link}}\n\n' +
+      'Construction must follow the sanctioned plan and any conditions printed on the order.\n\n' +
+      '{{orgName}}',
+    variables: [A, 'recipientName', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'APPLICATION_APPROVED',
+    channel: 'SMS',
+    subject: '',
+    body:
+      'Application {{applicationNumber}} has been APPROVED. The approval order will be available ' +
+      'online shortly. - {{orgShortName}}',
+    variables: [A, 'orgShortName'],
+  },
+  {
+    eventCode: 'APPLICATION_REJECTED',
+    channel: 'IN_APP',
+    subject: 'Application rejected',
+    body: '{{applicationNumber}} has been rejected. {{remarks}}',
+    variables: [A, 'remarks'],
+  },
+  {
+    eventCode: 'APPLICATION_REJECTED',
+    channel: 'EMAIL',
+    subject: 'Application {{applicationNumber}} has been rejected',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'Application {{applicationNumber}} has been rejected.\n\n' +
+      'Reason given: {{remarks}}\n\n' +
+      'The full record is here: {{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'recipientName', 'remarks', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'APPLICATION_REJECTED',
+    channel: 'SMS',
+    subject: '',
+    body:
+      'Application {{applicationNumber}} has been rejected. Please see the portal for the reasons. ' +
+      '- {{orgShortName}}',
+    variables: [A, 'orgShortName'],
+  },
+  {
+    eventCode: 'ORDER_ISSUED',
+    channel: 'IN_APP',
+    subject: 'Approval order {{orderNumber}} issued',
+    body: 'The approval order for {{applicationNumber}} is ready to download.',
+    variables: [A, 'orderNumber'],
+  },
+  {
+    eventCode: 'ORDER_ISSUED',
+    channel: 'EMAIL',
+    subject: 'Approval order {{orderNumber}} — {{applicationNumber}}',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'Approval order {{orderNumber}} has been issued for application {{applicationNumber}}.\n\n' +
+      'Download it here: {{link}}\n\n' +
+      '{{orgName}}',
+    variables: [A, 'orderNumber', 'recipientName', 'link', 'orgName'],
+  },
+  {
+    eventCode: 'ORDER_ISSUED',
+    channel: 'SMS',
+    subject: '',
+    body:
+      'Approval order {{orderNumber}} for application {{applicationNumber}} has been issued and is ' +
+      'available online. - {{orgShortName}}',
+    variables: [A, 'orderNumber', 'orgShortName'],
+  },
+
+  // ── The service standard ───────────────────────────────────────────────
+  //
+  // To the officer, never to the applicant: passing an SLA has no legal effect
+  // in this system (docs R.1.1), and telling a citizen their file is "overdue"
+  // would imply a remedy that does not exist.
+  {
+    eventCode: 'SLA_DUE_SOON',
+    channel: 'IN_APP',
+    subject: 'A file at your desk is due soon',
+    body: '{{applicationNumber}} at {{stageName}} is due on {{dueAt}}.',
+    variables: [A, 'stageName', 'dueAt'],
+  },
+  {
+    eventCode: 'SLA_OVERDUE',
+    channel: 'IN_APP',
+    subject: 'A file at your desk is overdue',
+    body: '{{applicationNumber}} at {{stageName}} is {{overdueDays}} day(s) past its service standard.',
+    variables: [A, 'stageName', 'overdueDays'],
+  },
+  {
+    eventCode: 'SLA_OVERDUE',
+    channel: 'EMAIL',
+    subject: '{{applicationNumber}} is past its service standard',
+    body:
+      'Dear {{recipientName}},\n\n' +
+      'Application {{applicationNumber}} has been at {{stageName}} beyond its service standard — ' +
+      '{{overdueDays}} day(s) over.\n\n' +
+      '{{link}}\n\n' +
+      'This is a reporting notice. It does not change what may be done with the application.\n\n' +
+      '{{orgName}}',
+    variables: [A, 'stageName', 'overdueDays', 'recipientName', 'link', 'orgName'],
+  },
+];
+
+export async function seedNotifications(prisma: PrismaClient) {
+  let created = 0;
+  let updated = 0;
+
+  for (const template of TEMPLATES) {
+    const existing = await prisma.notificationTemplate.findUnique({
+      where: {
+        eventCode_channel_locale: {
+          eventCode: template.eventCode,
+          channel: template.channel,
+          locale: 'en',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      // `providerTemplateId` is deliberately NOT overwritten: an administrator
+      // who has registered a DLT id must not lose it to a redeploy.
+      await prisma.notificationTemplate.update({
+        where: { id: existing.id },
+        data: {
+          subject: template.subject,
+          body: template.body,
+          variables: template.variables,
+          isActive: true,
+        },
+      });
+      updated += 1;
+    } else {
+      await prisma.notificationTemplate.create({
+        data: {
+          eventCode: template.eventCode,
+          channel: template.channel,
+          locale: 'en',
+          subject: template.subject,
+          body: template.body,
+          variables: template.variables,
+        },
+      });
+      created += 1;
+    }
+  }
+
+  const events = new Set(TEMPLATES.map((t) => t.eventCode)).size;
+  const sms = TEMPLATES.filter((t) => t.channel === 'SMS').length;
+
+  return { total: TEMPLATES.length, created, updated, events, sms };
+}
