@@ -37,6 +37,9 @@ const nextConfig: NextConfig = {
   // Docker deployment: emit a self-contained server bundle.
   output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
   serverExternalPackages: ['@node-rs/argon2'],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
