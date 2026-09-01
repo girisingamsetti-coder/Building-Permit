@@ -3,38 +3,21 @@ import { prisma } from '@/server/db/prisma';
 import { claimPending, markProcessed, markFailed } from '@/server/events/outbox';
 import { settingString } from '@/server/services/settings';
 import { markNotified } from '@/server/shortfalls/engine';
-import { inAppAdapter } from './adapters/in-app';
-import { emailAdapter } from './adapters/email';
-import { smsAdapter } from './adapters/sms';
+import {
+  getSmsProvider,
+  getEmailProvider,
+  getInAppProvider,
+  type ProviderSendOutcome,
+} from './providers';
 import { isKnownEvent, isMandatory, resolveRecipients } from './recipients';
-import { linkFor, render, templatesFor } from './templates';
-import { CHANNELS, type Channel, type ChannelAdapter, type Recipient } from './types';
-
-/**
- * The dispatcher: outbox events in, messages out, one log row per attempt.
- *
- * ── It never throws away an event ────────────────────────────────────────
- *
- * A channel that fails is a FAILED row in `notification_logs` with the reason
- * on it, and the other channels still go. A channel with no template is a
- * SKIPPED row naming the gap. An event nobody is configured to hear about is
- * marked processed with a log row saying so. The one thing that must never
- * happen is an event disappearing with no record — because from the outside
- * that is indistinguishable from a message that was delivered.
- *
- * ── The only thing that fails the whole job ──────────────────────────────
- *
- * An infrastructure error: the database is gone, or a bug throws. Then the
- * outbox row is left unprocessed with its attempt count raised, and the worker
- * comes back to it. A gateway refusing one SMS is not that, and retrying the
- * whole event would re-send the email that already went.
- */
-
-const ADAPTERS: Record<Channel, ChannelAdapter> = {
-  IN_APP: inAppAdapter,
-  EMAIL: emailAdapter,
-  SMS: smsAdapter,
-};
+import {
+  enrichTemplatePayload,
+  getCanonicalEventCode,
+  linkFor,
+  render,
+  templatesFor,
+} from './templates';
+import { CHANNELS, type Channel, type Recipient } from './types';
 
 /** Same event, same person, same channel, within a minute: send once. */
 const DEDUPE_WINDOW_MS = 60_000;
@@ -65,8 +48,6 @@ export async function dispatchOutbox(batchSize = 25): Promise<DispatchReport> {
 
       await markProcessed(event.id);
     } catch (error) {
-      // Infrastructure, not delivery. Leave it unprocessed so the worker
-      // returns to it rather than losing the event.
       report.errored += 1;
       await markFailed(event.id, error instanceof Error ? error.message : String(error));
       console.error(`[notifications] ${event.eventCode} could not be dispatched`, error);
@@ -80,9 +61,6 @@ export type EventOutcome = { sent: number; failed: number; skipped: number };
 
 /**
  * Delivers one event to everybody who should hear about it.
- *
- * Exported so a test — and, later, an administrator pressing "resend" — can
- * drive one event without going through the queue.
  */
 export async function dispatchEvent(event: {
   eventCode: string;
@@ -90,11 +68,9 @@ export async function dispatchEvent(event: {
   payload: Record<string, unknown>;
 }): Promise<EventOutcome> {
   const outcome: EventOutcome = { sent: 0, failed: 0, skipped: 0 };
+  const canonicalCode = getCanonicalEventCode(event.eventCode);
 
-  if (!isKnownEvent(event.eventCode)) {
-    // Not an error. `TASK_ASSIGNED` for a role nobody is configured to notify
-    // is a legitimate quiet event — but it is recorded, so "why did nobody get
-    // told?" has an answer that is not "read the source".
+  if (!isKnownEvent(event.eventCode) && !isKnownEvent(canonicalCode)) {
     await logRow({
       eventCode: event.eventCode,
       channel: 'IN_APP',
@@ -106,9 +82,12 @@ export async function dispatchEvent(event: {
     return outcome;
   }
 
+  // Enrich payload with application data for all 7 template variables
+  const enrichedPayload = await enrichTemplatePayload(event.applicationId, event.payload);
+
   const [recipients, templates] = await Promise.all([
-    resolveRecipients(event.eventCode, event.applicationId, {
-      ...event.payload,
+    resolveRecipients(canonicalCode, event.applicationId, {
+      ...enrichedPayload,
       applicationId: event.applicationId,
     }),
     templatesFor(event.eventCode),
@@ -126,25 +105,25 @@ export async function dispatchEvent(event: {
     return outcome;
   }
 
-  const link = linkFor(event.eventCode, { ...event.payload, applicationId: event.applicationId });
+  const link = linkFor(event.eventCode, { ...enrichedPayload, applicationId: event.applicationId });
   const quiet = await quietHours();
   let delivered = 0;
+
+  const smsProvider = getSmsProvider();
+  const emailProvider = getEmailProvider();
+  const inAppProvider = getInAppProvider();
 
   for (const recipient of recipients) {
     for (const channel of CHANNELS) {
       const template = templates.get(channel);
-
-      // No template is a real gap and is recorded as one. It is also the
-      // ordinary case for a channel a department has chosen not to use for
-      // this event, which is why it is SKIPPED rather than FAILED.
       if (!template) continue;
 
-      const decision = await shouldSend(event.eventCode, channel, recipient, quiet);
+      const decision = await shouldSend(canonicalCode, channel, recipient, quiet);
       if (decision) {
         await logRow({
           eventCode: event.eventCode,
           channel,
-          templateId: template.id,
+          templateId: template.id.startsWith('fallback-') ? null : template.id,
           recipientUserId: recipient.userId,
           recipient: addressFor(channel, recipient),
           status: 'SKIPPED',
@@ -155,33 +134,67 @@ export async function dispatchEvent(event: {
       }
 
       const message = await render(template, {
-        ...event.payload,
+        ...enrichedPayload,
         applicationId: event.applicationId,
         recipientName: recipient.name,
         link,
       });
 
-      const adapter = ADAPTERS[channel];
-      const result = adapter.configured
-        ? await adapter.send({
-            channel,
+      let result: ProviderSendOutcome;
+
+      try {
+        if (channel === 'IN_APP') {
+          result = await inAppProvider.sendInApp({
             recipient,
             message,
             eventCode: event.eventCode,
             applicationId: event.applicationId,
             link,
-          })
-        : {
-            status: 'SKIPPED' as const,
-            provider: adapter.name,
-            providerRef: '',
-            error: `The ${channel} channel is not configured.`,
-          };
+          });
+        } else if (channel === 'EMAIL') {
+          result = emailProvider.configured
+            ? await emailProvider.sendEmail({
+                recipient,
+                message,
+                eventCode: event.eventCode,
+                applicationId: event.applicationId,
+                link,
+              })
+            : {
+                status: 'SKIPPED',
+                provider: emailProvider.name,
+                providerRef: '',
+                error: 'Email provider is not configured.',
+              };
+        } else {
+          result = smsProvider.configured
+            ? await smsProvider.sendSms({
+                recipient,
+                message,
+                eventCode: event.eventCode,
+                applicationId: event.applicationId,
+                link,
+              })
+            : {
+                status: 'SKIPPED',
+                provider: smsProvider.name,
+                providerRef: '',
+                error: 'SMS provider is not configured.',
+              };
+        }
+      } catch (err) {
+        result = {
+          status: 'FAILED',
+          provider: channel === 'IN_APP' ? inAppProvider.name : channel === 'EMAIL' ? emailProvider.name : smsProvider.name,
+          providerRef: '',
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
 
       await logRow({
         eventCode: event.eventCode,
         channel,
-        templateId: template.id,
+        templateId: template.id.startsWith('fallback-') ? null : template.id,
         recipientUserId: recipient.userId,
         recipient: addressFor(channel, recipient),
         subject: message.subject,
@@ -189,8 +202,6 @@ export async function dispatchEvent(event: {
         status: result.status,
         provider: result.provider,
         providerRef: result.providerRef,
-        // A template that rendered blanks is worth knowing about even when the
-        // message went: the applicant received a sentence with a hole in it.
         error:
           result.error ||
           (message.missing.length
@@ -210,29 +221,21 @@ export async function dispatchEvent(event: {
     }
   }
 
-  // ── The shortfall lifecycle's NOTIFIED step ─────────────────────────────
-  //
-  // Advanced only when a message actually went out. A shortfall left at RAISED
-  // is the visible symptom of a dispatcher that could not tell anybody, which
-  // is the failure the two states exist to separate.
+  // Advance shortfall lifecycle if notified
   const shortfallId = String(event.payload.shortfallId ?? '');
-  if (delivered > 0 && shortfallId && event.eventCode === 'SHORTFALL_RAISED') {
-    await markNotified(shortfallId);
+  if (delivered > 0 && shortfallId && canonicalCode === 'SHORTFALL_RAISED') {
+    try {
+      await markNotified(shortfallId);
+    } catch {
+      // Non-blocking
+    }
   }
 
   return outcome;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Delivery rules
-// ═══════════════════════════════════════════════════════════════════════════
-
 /**
- * Why this message should not go. Null means send it.
- *
- * Order matters: preference is checked before dedupe, because a message the
- * recipient switched off should read as "they switched it off" rather than as
- * a duplicate of one they never received.
+ * Checks whether this message should leave the building.
  */
 async function shouldSend(
   eventCode: string,
@@ -273,8 +276,6 @@ async function shouldSend(
     return 'An identical message was sent to this recipient less than a minute ago.';
   }
 
-  // Quiet hours apply to SMS alone. An email or an in-app row at half past
-  // eleven costs the recipient nothing; a text message wakes them up.
   if (channel === 'SMS' && quiet && inQuietHours(quiet)) {
     return `Quiet hours (${quiet.from}:00–${quiet.to}:00). SMS is not sent overnight.`;
   }
@@ -288,7 +289,6 @@ const addressFor = (channel: Channel, recipient: Recipient): string => {
   return recipient.userId ?? '';
 };
 
-/** `22-07` in the settings, meaning 22:00 to 07:00. Empty disables it. */
 async function quietHours(): Promise<{ from: number; to: number } | null> {
   const raw = (await settingString('notifications_quiet_hours', '')).trim();
   if (!raw) return null;
@@ -305,28 +305,15 @@ async function quietHours(): Promise<{ from: number; to: number } | null> {
 
 function inQuietHours(window: { from: number; to: number }, now = new Date()): boolean {
   const hour = now.getHours();
-  // A window that wraps midnight (22 → 7) is the normal case, so it is handled
-  // first rather than as an edge.
   return window.from > window.to
     ? hour >= window.from || hour < window.to
     : hour >= window.from && hour < window.to;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// The log
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * One row per attempt, whatever happened.
- *
- * This table is the answer to "was the applicant told?", and it has to be able
- * to say no. A dispatcher that only logged successes would make every failure
- * look like an event that never happened.
- */
-async function logRow(input: {
+type LogInput = {
   eventCode: string;
   channel: Channel;
-  templateId?: string;
+  templateId?: string | null;
   recipientUserId?: string | null;
   recipient: string;
   subject?: string;
@@ -336,22 +323,27 @@ async function logRow(input: {
   providerRef?: string;
   error?: string;
   sentAt?: Date | null;
-}) {
-  await prisma.notificationLog.create({
-    data: {
-      eventCode: input.eventCode,
-      channel: input.channel,
-      templateId: input.templateId ?? null,
-      recipientUserId: input.recipientUserId ?? null,
-      recipient: input.recipient.slice(0, 255),
-      subject: (input.subject ?? '').slice(0, 500),
-      body: (input.body ?? '').slice(0, 4000),
-      status: input.status,
-      provider: input.provider ?? '',
-      providerRef: input.providerRef ?? '',
-      errorMessage: (input.error ?? '').slice(0, 1000),
-      attempts: 1,
-      sentAt: input.sentAt ?? null,
-    },
-  });
+};
+
+async function logRow(row: LogInput) {
+  try {
+    await prisma.notificationLog.create({
+      data: {
+        eventCode: row.eventCode,
+        channel: row.channel,
+        templateId: row.templateId ?? null,
+        recipientUserId: row.recipientUserId ?? null,
+        recipient: row.recipient || (row.recipientUserId ? `user:${row.recipientUserId}` : 'unknown'),
+        subject: row.subject ?? '',
+        body: row.body ?? '',
+        status: row.status,
+        provider: row.provider ?? '',
+        providerRef: row.providerRef ?? '',
+        errorMessage: (row.error ?? '').slice(0, 500),
+        sentAt: row.sentAt ?? null,
+      },
+    });
+  } catch (error) {
+    console.error('[notifications] Could not write delivery log row', error);
+  }
 }

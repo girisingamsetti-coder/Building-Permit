@@ -181,9 +181,12 @@ export function NotificationBell() {
           </ul>
         )}
 
-        <div className="border-t border-border px-3 py-2">
-          <Link href="/profile#notifications" className="text-caption text-primary hover:underline">
-            Notification settings
+        <div className="flex items-center justify-between border-t border-border px-3 py-2">
+          <Link href="/notifications" className="text-caption font-medium text-primary hover:underline">
+            View all in Notification Center
+          </Link>
+          <Link href="/profile#notifications" className="text-caption text-text-muted hover:text-text">
+            Settings
           </Link>
         </div>
       </DropdownMenuContent>

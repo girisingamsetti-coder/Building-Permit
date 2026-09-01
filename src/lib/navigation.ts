@@ -10,6 +10,7 @@ import {
   Shield,
   Building2,
   SlidersHorizontal,
+  MessageSquare,
   type LucideIcon,
 } from 'lucide-react';
 import { CAPABILITIES as C, type Capability } from './constants';
@@ -100,11 +101,22 @@ export const NAV: NavSection[] = [
         icon: FolderOpen,
         capabilities: [C.MASTER_DATA_MANAGE],
       },
+      {
+        label: 'SMS & Delivery logs',
+        href: '/admin/notifications/logs',
+        icon: MessageSquare,
+        capabilities: [C.NOTIFICATION_LOG_VIEW, C.SETTINGS_MANAGE],
+      },
     ],
   },
   {
     label: 'System',
     items: [
+      {
+        label: 'Notification center',
+        href: '/notifications',
+        icon: MessageSquare,
+      },
       {
         label: 'Settings',
         href: '/admin/settings',
@@ -140,6 +152,8 @@ const SEGMENT_LABELS: Record<string, string> = {
   shortfalls: 'Shortfalls',
   payments: 'Payments',
   documents: 'Documents',
+  notifications: 'Notification Center',
+  logs: 'Delivery Logs',
   reports: 'Reports',
   analytics: 'Analytics',
   profile: 'Profile',

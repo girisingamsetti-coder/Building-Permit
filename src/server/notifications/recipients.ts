@@ -47,32 +47,38 @@ export type RecipientRule =
  */
 const RULES: Record<string, { rules: RecipientRule[]; mandatory?: boolean }> = {
   APPLICATION_CREATED: { rules: ['LTP'] },
+  APPLICATION_SUBMITTED: { rules: ['LTP'] },
   DRAWING_UPLOADED: { rules: ['LTP'] },
   SCRUTINY_PASSED: { rules: ['LTP'] },
   SCRUTINY_FAILED: { rules: ['LTP'], mandatory: true },
   DOCUMENTS_PENDING: { rules: ['LTP'] },
   DOCUMENTS_COMPLETED: { rules: ['LTP'] },
+  DOCUMENTS_COMPLETE: { rules: ['LTP'] },
   FEE_GENERATED: { rules: ['LTP', 'APPLICANT'], mandatory: true },
+  PAYMENT_PENDING: { rules: ['LTP', 'APPLICANT'], mandatory: true },
   PAYMENT_SUCCESSFUL: { rules: ['LTP', 'APPLICANT'], mandatory: true },
+  PAYMENT_SUCCESS: { rules: ['LTP', 'APPLICANT'], mandatory: true },
   PAYMENT_FAILED: { rules: ['LTP'], mandatory: true },
 
   APPLICATION_FORWARDED: { rules: ['LTP'] },
   APPLICATION_RETURNED: { rules: ['LTP'], mandatory: true },
   TASK_ASSIGNED: { rules: ['ASSIGNED_OFFICER', 'STAGE_ROLE'] },
 
-  // The four that this phase exists for. All transactional: a shortfall
-  // nobody hears about is a file that stops.
+  // Shortfalls
   SHORTFALL_RAISED: { rules: ['LTP', 'APPLICANT'], mandatory: true },
   SHORTFALL_RESPONDED: { rules: ['RAISING_OFFICER'] },
   SHORTFALL_RESOLVED: { rules: ['LTP', 'APPLICANT'], mandatory: true },
   SHORTFALL_REJECTED: { rules: ['LTP', 'APPLICANT'], mandatory: true },
 
+  // Decisions
   APPLICATION_APPROVED: { rules: ['LTP', 'APPLICANT'], mandatory: true },
   APPLICATION_REJECTED: { rules: ['LTP', 'APPLICANT'], mandatory: true },
   ORDER_ISSUED: { rules: ['LTP', 'APPLICANT'], mandatory: true },
 
+  // SLA
   SLA_DUE_SOON: { rules: ['ASSIGNED_OFFICER'] },
   SLA_OVERDUE: { rules: ['ASSIGNED_OFFICER', 'ESCALATION_ROLE'] },
+  SLA_BREACHED: { rules: ['ASSIGNED_OFFICER', 'ESCALATION_ROLE'] },
 
   USER_CREATED: { rules: ['USER'], mandatory: true },
   PASSWORD_RESET: { rules: ['USER'], mandatory: true },

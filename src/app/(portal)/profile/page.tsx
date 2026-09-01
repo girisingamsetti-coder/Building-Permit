@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/common/status-badge';
 import { ChangePasswordForm } from '@/features/auth/change-password-form';
+import { getUserNotificationPreferences } from '@/server/notifications/preferences';
+import { NotificationPreferencesTab } from '@/features/notifications/notification-preferences-tab';
 
 export const metadata: Metadata = { title: 'Profile' };
 export const dynamic = 'force-dynamic';
@@ -13,36 +15,39 @@ export const dynamic = 'force-dynamic';
 export default async function ProfilePage() {
   const auth = await requirePageUser();
 
-  const user = await prisma.user.findUniqueOrThrow({
-    where: { id: auth.id },
-    select: {
-      name: true,
-      email: true,
-      phone: true,
-      designation: true,
-      employeeCode: true,
-      status: true,
-      lastLoginAt: true,
-      mustChangePassword: true,
-      office: { select: { name: true } },
-      department: { select: { name: true } },
-      primaryZone: { select: { name: true } },
-    },
-  });
+  const [user, preferences] = await Promise.all([
+    prisma.user.findUniqueOrThrow({
+      where: { id: auth.id },
+      select: {
+        name: true,
+        email: true,
+        phone: true,
+        designation: true,
+        employeeCode: true,
+        status: true,
+        lastLoginAt: true,
+        mustChangePassword: true,
+        office: { select: { name: true } },
+        department: { select: { name: true } },
+        primaryZone: { select: { name: true } },
+      },
+    }),
+    getUserNotificationPreferences(auth),
+  ]);
 
   return (
-    <div className="max-w-3xl">
-      <PageHeader title="Profile" description="Your account details and password." />
+    <div className="max-w-4xl space-y-4">
+      <PageHeader title="Profile & Preferences" />
 
       <div className="space-y-4">
         <Card>
-          <CardHeader>
+          <CardHeader className="py-3.5 border-b border-border/60">
             <CardTitle>Your details</CardTitle>
             <CardDescription>
-              Contact an administrator to change any of these.
+              Account details and assigned credentials.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-5">
             <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
               <Detail label="Name">{user.name}</Detail>
               <Detail label="Email">{user.email}</Detail>
@@ -75,14 +80,19 @@ export default async function ProfilePage() {
           </CardContent>
         </Card>
 
+        {/* Notification Preferences */}
+        <div id="notifications">
+          <NotificationPreferencesTab initialPreferences={preferences} />
+        </div>
+
         <Card id="change-password">
-          <CardHeader>
+          <CardHeader className="py-3.5 border-b border-border/60">
             <CardTitle>Change password</CardTitle>
             <CardDescription>
-              Changing it signs out every other device. This one stays signed in.
+              Changing it signs out every other device.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-5">
             <ChangePasswordForm mustChange={user.mustChangePassword} />
           </CardContent>
         </Card>

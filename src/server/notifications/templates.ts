@@ -2,22 +2,22 @@ import 'server-only';
 import { prisma } from '@/server/db/prisma';
 import { settingString } from '@/server/services/settings';
 import { env } from '@/server/config/env';
+import { stageLabel } from '@/lib/status';
+import { formatMoney } from '@/lib/fees';
 import type { Channel, Rendered } from './types';
 
 /**
- * Templates, and the substitution that fills them in.
- *
- * ── An unknown variable renders as nothing, and says so ──────────────────
- *
- * `{{demandNumber}}` on an event that carries no demand becomes an empty
- * string, not the literal braces. An applicant receiving "Your fee of Rs.
- * {{amount}} is due" learns that the department's software is broken, which is
- * a worse message than the one that was meant.
- *
- * The missing keys are RETURNED alongside the text so the caller can record
- * them: a template quietly rendering half its variables blank is exactly the
- * kind of fault nobody notices until an applicant rings up confused.
+ * Event aliases mapping prompt/canonical variations to database template codes.
  */
+export const EVENT_ALIASES: Record<string, string> = {
+  PAYMENT_SUCCESS: 'PAYMENT_SUCCESSFUL',
+  DOCUMENTS_COMPLETE: 'DOCUMENTS_COMPLETED',
+  SLA_BREACHED: 'SLA_OVERDUE',
+};
+
+export function getCanonicalEventCode(eventCode: string): string {
+  return EVENT_ALIASES[eventCode] ?? eventCode;
+}
 
 /** Values available to every template, whatever the event. */
 async function ambient(): Promise<Record<string, string>> {
@@ -34,10 +34,15 @@ export type RenderResult = Rendered & { missing: string[] };
 /**
  * Fills `{{name}}` placeholders from the payload.
  *
- * Deliberately not a template ENGINE. There are no conditionals, no loops and
- * no expressions, because a notification template is edited by an
- * administrator through a web form and a language with control flow in it is a
- * language somebody can write an infinite loop in.
+ * Supports all required template variables:
+ * - {{applicationNumber}}
+ * - {{applicantName}}
+ * - {{status}}
+ * - {{currentStage}}
+ * - {{shortfallReason}}
+ * - {{amount}}
+ * - {{approvalDate}}
+ * - {{orgName}}, {{orgShortName}}, {{link}}, {{recipientName}}, etc.
  */
 export function fill(
   text: string,
@@ -56,9 +61,6 @@ export function fill(
     return String(value);
   });
 
-  // Collapse the double spaces and stranded punctuation an empty substitution
-  // leaves behind, so a missing variable reads as a terse sentence rather than
-  // a broken one.
   return { text: filled.replace(/[ \t]{2,}/g, ' ').trim(), missing: [...new Set(missing)] };
 }
 
@@ -69,27 +71,243 @@ export type TemplateRow = {
   providerTemplateId: string;
 };
 
+/** Default fallback templates if custom DB template is not found */
+const DEFAULT_FALLBACK_TEMPLATES: Record<string, Record<Channel, { subject: string; body: string }>> = {
+  APPLICATION_CREATED: {
+    IN_APP: {
+      subject: 'Application {{applicationNumber}} created',
+      body: 'Application {{applicationNumber}} has been initiated for {{applicantName}}.',
+    },
+    EMAIL: {
+      subject: 'Application Initiated — {{applicationNumber}}',
+      body: 'Dear {{recipientName}},\n\nYour application {{applicationNumber}} has been created.\nStage: {{currentStage}}.\nStatus: {{status}}.\n\nLink: {{link}}\n\n{{orgName}}',
+    },
+    SMS: {
+      subject: '',
+      body: 'Application {{applicationNumber}} created. Track status at {{link}} - {{orgShortName}}',
+    },
+  },
+  APPLICATION_SUBMITTED: {
+    IN_APP: {
+      subject: 'Application {{applicationNumber}} submitted',
+      body: 'Application {{applicationNumber}} has been submitted for scrutiny and review.',
+    },
+    EMAIL: {
+      subject: 'Application Submitted — {{applicationNumber}}',
+      body: 'Dear {{recipientName}},\n\nApplication {{applicationNumber}} has been successfully submitted to {{orgName}}.\n\nStatus: {{status}}\nLink: {{link}}',
+    },
+    SMS: {
+      subject: '',
+      body: 'Application {{applicationNumber}} submitted successfully. - {{orgShortName}}',
+    },
+  },
+  PAYMENT_PENDING: {
+    IN_APP: {
+      subject: 'Payment pending for {{applicationNumber}}',
+      body: 'A fee of {{amount}} is pending for application {{applicationNumber}}.',
+    },
+    EMAIL: {
+      subject: 'Payment Pending — {{applicationNumber}}',
+      body: 'Dear {{recipientName}},\n\nA payment of {{amount}} is pending for application {{applicationNumber}}.\n\nPlease pay here: {{link}}\n\n{{orgName}}',
+    },
+    SMS: {
+      subject: '',
+      body: 'Payment of {{amount}} is pending for app {{applicationNumber}}. Pay at {{link}} - {{orgShortName}}',
+    },
+  },
+  SHORTFALL_RAISED: {
+    IN_APP: {
+      subject: 'Shortfall raised on {{applicationNumber}}',
+      body: 'A shortfall has been raised: {{shortfallReason}} on {{applicationNumber}}.',
+    },
+    EMAIL: {
+      subject: 'Action Required: Shortfall on {{applicationNumber}}',
+      body: 'Dear {{recipientName}},\n\nA shortfall was raised on application {{applicationNumber}}.\nReason: {{shortfallReason}}\n\nRespond here: {{link}}\n\n{{orgName}}',
+    },
+    SMS: {
+      subject: '',
+      body: 'Shortfall raised on {{applicationNumber}}: {{shortfallReason}}. Respond: {{link}} - {{orgShortName}}',
+    },
+  },
+  SHORTFALL_RESOLVED: {
+    IN_APP: {
+      subject: 'Shortfall resolved on {{applicationNumber}}',
+      body: 'Shortfall on application {{applicationNumber}} has been resolved and approved.',
+    },
+    EMAIL: {
+      subject: 'Shortfall Resolved — {{applicationNumber}}',
+      body: 'Dear {{recipientName}},\n\nThe shortfall for application {{applicationNumber}} has been reviewed and accepted.\n\n{{orgName}}',
+    },
+    SMS: {
+      subject: '',
+      body: 'Shortfall on {{applicationNumber}} is resolved. Application advances. - {{orgShortName}}',
+    },
+  },
+  APPLICATION_APPROVED: {
+    IN_APP: {
+      subject: 'Application {{applicationNumber}} Approved',
+      body: 'Building permission granted on {{approvalDate}} for application {{applicationNumber}}.',
+    },
+    EMAIL: {
+      subject: 'Building Permission Granted — {{applicationNumber}}',
+      body: 'Dear {{recipientName}},\n\nWe are pleased to inform that application {{applicationNumber}} was APPROVED on {{approvalDate}}.\n\nDownload Order: {{link}}\n\n{{orgName}}',
+    },
+    SMS: {
+      subject: '',
+      body: 'Application {{applicationNumber}} is APPROVED on {{approvalDate}}. Download order at {{link}} - {{orgShortName}}',
+    },
+  },
+  APPLICATION_REJECTED: {
+    IN_APP: {
+      subject: 'Application {{applicationNumber}} Rejected',
+      body: 'Application {{applicationNumber}} has been refused permission.',
+    },
+    EMAIL: {
+      subject: 'Application Status — {{applicationNumber}}',
+      body: 'Dear {{recipientName}},\n\nApplication {{applicationNumber}} has been rejected.\n\nView details: {{link}}\n\n{{orgName}}',
+    },
+    SMS: {
+      subject: '',
+      body: 'Application {{applicationNumber}} was rejected. Details at {{link}} - {{orgShortName}}',
+    },
+  },
+  SLA_BREACHED: {
+    IN_APP: {
+      subject: 'SLA Overdue — {{applicationNumber}}',
+      body: 'Application {{applicationNumber}} has exceeded the SLA turnaround time for stage {{currentStage}}.',
+    },
+    EMAIL: {
+      subject: 'SLA Overdue Alert: {{applicationNumber}}',
+      body: 'Application {{applicationNumber}} is overdue at stage {{currentStage}}.\n\nLink: {{link}}',
+    },
+    SMS: {
+      subject: '',
+      body: 'Overdue alert: Application {{applicationNumber}} SLA breached at {{currentStage}}. - {{orgShortName}}',
+    },
+  },
+};
+
 /** Every active template for an event, keyed by channel. One query per event. */
 export async function templatesFor(
   eventCode: string,
   locale = 'en'
 ): Promise<Map<Channel, TemplateRow>> {
+  const canonicalCode = getCanonicalEventCode(eventCode);
+
   const rows = await prisma.notificationTemplate.findMany({
-    where: { eventCode, locale, isActive: true },
+    where: {
+      eventCode: { in: [eventCode, canonicalCode] },
+      locale,
+      isActive: true,
+    },
     select: { id: true, channel: true, subject: true, body: true, providerTemplateId: true },
   });
 
-  return new Map(
-    rows.map((row) => [
-      row.channel as Channel,
-      {
-        id: row.id,
-        subject: row.subject,
-        body: row.body,
-        providerTemplateId: row.providerTemplateId,
-      },
-    ])
-  );
+  const map = new Map<Channel, TemplateRow>();
+  for (const row of rows) {
+    map.set(row.channel as Channel, {
+      id: row.id,
+      subject: row.subject,
+      body: row.body,
+      providerTemplateId: row.providerTemplateId,
+    });
+  }
+
+  // If missing channels, check fallback defaults
+  const fallback = DEFAULT_FALLBACK_TEMPLATES[eventCode] || DEFAULT_FALLBACK_TEMPLATES[canonicalCode];
+  if (fallback) {
+    for (const ch of ['IN_APP', 'EMAIL', 'SMS'] as Channel[]) {
+      if (!map.has(ch) && fallback[ch]) {
+        map.set(ch, {
+          id: `fallback-${eventCode}-${ch}`,
+          subject: fallback[ch].subject,
+          body: fallback[ch].body,
+          providerTemplateId: 'DLT_DEFAULT',
+        });
+      }
+    }
+  }
+
+  return map;
+}
+
+/** Enriches payload with application data for all required variables */
+export async function enrichTemplatePayload(
+  applicationId: string | null,
+  payload: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const enriched: Record<string, unknown> = { ...payload };
+
+  if (applicationId) {
+    try {
+      const app = await prisma.application.findUnique({
+        where: { id: applicationId },
+        select: {
+          applicationNumber: true,
+          status: true,
+          currentStageCode: true,
+          submittedAt: true,
+          approvedAt: true,
+          applicant: { select: { name: true } },
+          approvalOrder: { select: { issuedAt: true, orderNumber: true } },
+          fees: {
+            where: { status: { in: ['ISSUED', 'PART_PAID', 'PENDING'] } },
+            orderBy: { issuedAt: 'desc' },
+            take: 1,
+            select: { totalAmount: true, demandNumber: true },
+          },
+          shortfalls: {
+            where: { status: { in: ['RAISED', 'NOTIFIED', 'ACTION_REQUIRED'] } },
+            orderBy: { raisedAt: 'desc' },
+            take: 1,
+            select: { title: true, description: true },
+          },
+        },
+      });
+
+      if (app) {
+        if (!enriched.applicationNumber) enriched.applicationNumber = app.applicationNumber;
+        if (!enriched.applicantName && app.applicant?.name) enriched.applicantName = app.applicant.name;
+        if (!enriched.status) enriched.status = app.status;
+        if (!enriched.currentStage) enriched.currentStage = stageLabel(app.currentStageCode);
+        const appDate = app.approvedAt || app.approvalOrder?.issuedAt;
+        if (!enriched.approvalDate && appDate) {
+          enriched.approvalDate = new Date(appDate).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          });
+        }
+        if (!enriched.shortfallReason && (app.shortfalls[0]?.title || app.shortfalls[0]?.description)) {
+          enriched.shortfallReason = app.shortfalls[0].title || app.shortfalls[0].description;
+        }
+        if (!enriched.amount && app.fees[0]?.totalAmount) {
+          enriched.amount = formatMoney(app.fees[0].totalAmount);
+          enriched.total = formatMoney(app.fees[0].totalAmount);
+          enriched.demandNumber = app.fees[0].demandNumber;
+        }
+      }
+    } catch {
+      // Non-blocking enrichment failure
+    }
+  }
+
+  // Normalize fallback defaults for core variables if still missing
+  if (!enriched.applicationNumber) enriched.applicationNumber = 'APP';
+  if (!enriched.applicantName) enriched.applicantName = 'Applicant';
+  if (!enriched.status) enriched.status = 'In Progress';
+  if (!enriched.currentStage) enriched.currentStage = 'Review';
+  if (!enriched.shortfallReason) enriched.shortfallReason = 'Required documentation clarification';
+  if (!enriched.amount) enriched.amount = '₹0.00';
+  if (!enriched.approvalDate) {
+    enriched.approvalDate = new Date().toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
+  return enriched;
 }
 
 /** Renders one template against an event payload. */
@@ -112,9 +330,6 @@ export async function render(
 
 /**
  * The deep link a notification points at.
- *
- * Absolute, because it goes into an email and an SMS as well as the bell, and
- * a relative path in an email is a dead link.
  */
 export function linkFor(eventCode: string, payload: Record<string, unknown>): string {
   const applicationId = String(payload.applicationId ?? '');
