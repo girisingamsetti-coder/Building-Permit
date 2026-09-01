@@ -470,6 +470,10 @@ model Application {
   // The LTP list's default ordering: their own files, most recently touched
   // first. Without this the commonest query in the product sorts on a heap.
   @@index([ltpUserId, deletedAt, updatedAt])
+  @@index([status])
+  @@index([zoneId])
+  @@index([currentStageCode])
+  @@index([deletedAt])
   @@map("applications")
 }
 
@@ -1545,6 +1549,10 @@ model WorkflowTask {
   @@index([assignedUserId, status])
   @@index([instanceId, status])
   @@index([status, priority, receivedAt])
+  @@index([status])
+  @@index([assignedUserId])
+  @@index([assignedRoleKey])
+  @@index([receivedAt])
   @@map("workflow_tasks")
 }
 
@@ -1664,6 +1672,8 @@ model Shortfall {
 
   @@index([applicationId, status])
   @@index([status, mode])
+  @@index([status])
+  @@index([applicationId])
   @@map("shortfalls")
 }
 
@@ -1835,6 +1845,7 @@ model NotificationLog {
 
   @@index([eventCode, createdAt])
   @@index([status, attempts])
+  @@index([status])
   @@map("notification_logs")
 }
 

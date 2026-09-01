@@ -20,7 +20,7 @@ export default function UserNotFound() {
         action={
           <div className="flex gap-2">
             <Button asChild variant="primary">
-              <Link href="/admin/users">All users</Link>
+              <Link href="/admin/settings/users">All users</Link>
             </Button>
             <Button asChild variant="ghost">
               <Link href="/admin">Administration</Link>

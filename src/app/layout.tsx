@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { Plus_Jakarta_Sans, JetBrains_Mono, Inter } from 'next/font/google';
 import './globals.css';
 
 const sansFont = Plus_Jakarta_Sans({
@@ -16,6 +16,12 @@ const monoFont = JetBrains_Mono({
   weight: ['400', '500', '600'],
 });
 
+const interFont = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
 export const metadata: Metadata = {
   title: {
     default: 'LTP Approval Management System',
@@ -27,7 +33,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sansFont.variable} ${monoFont.variable}`}>
+    <html lang="en" className={`${sansFont.variable} ${monoFont.variable} ${interFont.variable}`}>
       <body className="min-h-screen font-sans text-body text-text antialiased selection:bg-primary/15 selection:text-primary">
         {children}
       </body>

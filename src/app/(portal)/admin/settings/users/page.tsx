@@ -39,7 +39,7 @@ export default async function UsersPage({
         description={`${total} ${total === 1 ? 'account' : 'accounts'}`}
         actions={
           <Button asChild variant="primary">
-            <Link href="/admin/users/new">
+            <Link href="/admin/settings/users/new">
               <UserPlus className="size-4" />
               Create user
             </Link>

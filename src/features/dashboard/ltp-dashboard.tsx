@@ -243,7 +243,7 @@ export function LtpDashboard({
       </Card>
 
       {!nothingYet && (
-        <Panel title="Recent Activity">
+        <Panel title="Recent Activity" className="!-mt-3.5 bg-gradient-to-b from-blue-50/50 to-transparent border-blue-100 shadow-inner">
           <ActivityFeed
             entries={activity}
             emptyMessage="No activity recorded yet."

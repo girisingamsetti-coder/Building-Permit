@@ -31,23 +31,23 @@ export function Sidebar({
     <nav
       aria-label="Main"
       className={cn(
-        'flex h-full flex-col border-r border-border/80 bg-surface shadow-subtle',
+        'flex h-full flex-col bg-[#063970] text-white shadow-xl',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
-      <div className={cn('flex h-16 items-center gap-3 border-b border-border/70 px-4', collapsed && 'justify-center px-0')}>
-        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow-md shadow-blue-500/20">
+      <div className={cn('flex h-16 items-center gap-3 border-b border-white/20 px-4', collapsed && 'justify-center px-0')}>
+        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-[#063970] shadow-sm">
           <Building className="size-5" />
         </div>
         {!collapsed && (
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="truncate text-h2 font-bold tracking-tight text-text">LAMS</span>
-              <span className="rounded-md bg-primary-subtle px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-primary">
+              <span className="truncate text-h2 font-bold tracking-tight text-white">LAMS</span>
+              <span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
                 AP
               </span>
             </div>
-            <p className="truncate text-caption text-text-muted">Building Permission Authority</p>
+            <p className="truncate text-caption text-white/70">Building Permission Authority</p>
           </div>
         )}
       </div>
@@ -56,7 +56,7 @@ export function Sidebar({
         {sections.map((section, i) => (
           <div key={section.label ?? i} className={cn(i > 0 && 'mt-6')}>
             {section.label && !collapsed && (
-              <p className="px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-text-subtle/80">
+              <p className="px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-white/60">
                 {section.label}
               </p>
             )}
@@ -70,10 +70,10 @@ export function Sidebar({
 
                 const inner = (
                   <>
-                    <Icon className={cn('size-4 shrink-0 transition-colors', active ? 'text-primary' : 'text-text-muted')} />
+                    <Icon className={cn('size-4 shrink-0 transition-colors', active ? 'text-white' : 'text-white/70')} />
                     {!collapsed && <span className="truncate">{item.label}</span>}
                     {!collapsed && disabled && (
-                      <span className="ml-auto shrink-0 rounded bg-surface-sunk px-1.5 py-0.5 text-[10px] font-medium text-text-subtle">
+                      <span className="ml-auto shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-white/60">
                         {item.comingIn}
                       </span>
                     )}
@@ -84,10 +84,10 @@ export function Sidebar({
                   'flex items-center gap-3 rounded-xl px-3 py-2 text-small font-medium transition-all duration-150',
                   collapsed && 'justify-center px-0 py-2.5',
                   disabled
-                    ? 'cursor-not-allowed text-text-subtle/50'
+                    ? 'cursor-not-allowed text-white/40'
                     : active
-                      ? 'bg-primary/10 font-semibold text-primary shadow-subtle'
-                      : 'text-text-muted hover:bg-surface-sunk hover:text-text'
+                      ? 'bg-white/20 font-semibold text-white shadow-sm'
+                      : 'text-white/80 hover:bg-white/10 hover:text-white'
                 );
 
                 const node = disabled ? (

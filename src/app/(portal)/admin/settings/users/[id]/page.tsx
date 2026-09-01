@@ -87,7 +87,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   return (
     <>
       <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-        <Link href="/admin/users">
+        <Link href="/admin/settings/users">
           <ArrowLeft className="size-4" />
           All users
         </Link>

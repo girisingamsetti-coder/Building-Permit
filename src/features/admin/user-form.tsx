@@ -79,7 +79,7 @@ export function UserForm({ meta, defaults }: { meta: FormMeta; defaults?: Partia
         setGenerated({ email: values.email, password: data.generatedPassword });
       } else {
         toast.success('User created', { description: values.email });
-        router.push(`/admin/users/${data.user.id}`);
+        router.push(`/admin/settings/users/${data.user.id}`);
       }
       router.refresh();
     } catch {
@@ -258,7 +258,7 @@ export function UserForm({ meta, defaults }: { meta: FormMeta; defaults?: Partia
         value={generated}
         onClose={() => {
           setGenerated(null);
-          router.push('/admin/users');
+          router.push('/admin/settings/users');
         }}
       />
     </>

@@ -75,7 +75,7 @@ export function UsersTable({
         cell: ({ row }) => (
           <div className="min-w-0">
             <Link
-              href={`/admin/users/${row.original.id}`}
+              href={`/admin/settings/users/${row.original.id}`}
               className="font-medium text-text hover:text-primary hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
@@ -147,7 +147,7 @@ export function UsersTable({
           description="Create the first account to get started."
           action={
             <Button asChild variant="primary">
-              <Link href="/admin/users/new">
+              <Link href="/admin/settings/users/new">
                 <UserPlus className="size-4" />
                 Create user
               </Link>
@@ -174,10 +174,10 @@ export function UsersTable({
 
         <Select value={role} onValueChange={setRole}>
           <SelectTrigger className="w-[13rem]" aria-label="Filter by role">
-            <SelectValue placeholder="Any role" />
+            <SelectValue placeholder="All roles" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>Any role</SelectItem>
+            <SelectItem value={ANY}>All roles</SelectItem>
             {(Object.values(ROLES) as RoleKey[]).map((key) => (
               <SelectItem key={key} value={key}>
                 {ROLE_META[key]?.name ?? key}
@@ -188,10 +188,10 @@ export function UsersTable({
 
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-[10rem]" aria-label="Filter by status">
-            <SelectValue placeholder="Any status" />
+            <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>Any status</SelectItem>
+            <SelectItem value={ANY}>All statuses</SelectItem>
             {STATUSES.map((value) => (
               <SelectItem key={value} value={value}>
                 {value.charAt(0) + value.slice(1).toLowerCase()}
@@ -221,7 +221,7 @@ export function UsersTable({
       <DataTable
         columns={columns}
         data={filtered}
-        onRowClick={(row) => router.push(`/admin/users/${row.id}`)}
+        onRowClick={(row) => router.push(`/admin/settings/users/${row.id}`)}
         emptyTitle="No users match these filters"
         emptyDescription="Try a different name, role or status — or clear the filters."
       />

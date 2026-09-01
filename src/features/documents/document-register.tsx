@@ -279,10 +279,10 @@ export function DocumentRegister({
             onValueChange={(v) => apply({ documentTypeId: v === ANY ? null : v })}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="All documents" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ANY}>Any document</SelectItem>
+              <SelectItem value={ANY}>All documents</SelectItem>
               {meta.documentTypes.map((t) => (
                 <SelectItem key={t.id} value={t.id}>
                   {t.name}
@@ -299,10 +299,10 @@ export function DocumentRegister({
               onValueChange={(v) => apply({ zoneId: v === ANY ? null : v })}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="All zones" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>Any zone</SelectItem>
+                <SelectItem value={ANY}>All zones</SelectItem>
                 {meta.zones.map((z) => (
                   <SelectItem key={z.id} value={z.id}>
                     {z.code}

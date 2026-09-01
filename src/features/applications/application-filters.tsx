@@ -209,10 +209,10 @@ export function ApplicationFilters({ meta, total }: { meta: ApplicationMeta; tot
 
         <Select value={status || ANY} onValueChange={(v) => apply({ status: v, bucket: null })}>
           <SelectTrigger className="w-[11rem]" aria-label="Filter by status">
-            <SelectValue placeholder="Any status" />
+            <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>Any status</SelectItem>
+            <SelectItem value={ANY}>All statuses</SelectItem>
             {COMMON_STATUSES.map((s) => (
               <SelectItem key={s} value={s}>
                 {statusMeta('application', s).label}
@@ -223,10 +223,10 @@ export function ApplicationFilters({ meta, total }: { meta: ApplicationMeta; tot
 
         <Select value={typeId || ANY} onValueChange={(v) => apply({ applicationTypeId: v })}>
           <SelectTrigger className="w-[13rem]" aria-label="Filter by application type">
-            <SelectValue placeholder="Any type" />
+            <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>Any type</SelectItem>
+            <SelectItem value={ANY}>All types</SelectItem>
             {meta.types.map((t) => (
               <SelectItem key={t.id} value={t.id}>
                 {t.name}
@@ -257,10 +257,10 @@ export function ApplicationFilters({ meta, total }: { meta: ApplicationMeta; tot
           <Field label="Zone" htmlFor="filter-zone">
             <Select value={zoneId || ANY} onValueChange={(v) => apply({ zoneId: v })}>
               <SelectTrigger id="filter-zone" aria-label="Filter by zone">
-                <SelectValue placeholder="Any zone" />
+                <SelectValue placeholder="All zones" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>Any zone</SelectItem>
+                <SelectItem value={ANY}>All zones</SelectItem>
                 {meta.zones.map((z) => (
                   <SelectItem key={z.id} value={z.id}>
                     {z.name}
@@ -273,10 +273,10 @@ export function ApplicationFilters({ meta, total }: { meta: ApplicationMeta; tot
           <Field label="Workflow stage" htmlFor="filter-stage">
             <Select value={stage || ANY} onValueChange={(v) => apply({ stage: v })}>
               <SelectTrigger id="filter-stage" aria-label="Filter by workflow stage">
-                <SelectValue placeholder="Any stage" />
+                <SelectValue placeholder="All stages" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>Any stage</SelectItem>
+                <SelectItem value={ANY}>All stages</SelectItem>
                 {STAGE_OPTIONS.map(([code, label]) => (
                   <SelectItem key={code} value={code}>
                     {label}
@@ -289,10 +289,10 @@ export function ApplicationFilters({ meta, total }: { meta: ApplicationMeta; tot
           <Field label="Payment" htmlFor="filter-payment">
             <Select value={payment || ANY} onValueChange={(v) => apply({ payment: v })}>
               <SelectTrigger id="filter-payment" aria-label="Filter by payment state">
-                <SelectValue placeholder="Any payment state" />
+                <SelectValue placeholder="All payment states" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>Any payment state</SelectItem>
+                <SelectItem value={ANY}>All payment states</SelectItem>
                 {PAYMENT_OPTIONS.map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
@@ -305,10 +305,10 @@ export function ApplicationFilters({ meta, total }: { meta: ApplicationMeta; tot
           <Field label="Scrutiny" htmlFor="filter-scrutiny">
             <Select value={scrutiny || ANY} onValueChange={(v) => apply({ scrutiny: v })}>
               <SelectTrigger id="filter-scrutiny" aria-label="Filter by scrutiny outcome">
-                <SelectValue placeholder="Any scrutiny state" />
+                <SelectValue placeholder="All scrutiny states" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>Any scrutiny state</SelectItem>
+                <SelectItem value={ANY}>All scrutiny states</SelectItem>
                 {SCRUTINY_OPTIONS.map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
@@ -321,10 +321,10 @@ export function ApplicationFilters({ meta, total }: { meta: ApplicationMeta; tot
           <Field label="Shortfall" htmlFor="filter-shortfall">
             <Select value={shortfall || ANY} onValueChange={(v) => apply({ shortfall: v })}>
               <SelectTrigger id="filter-shortfall" aria-label="Filter by shortfall state">
-                <SelectValue placeholder="Any shortfall state" />
+                <SelectValue placeholder="All shortfall states" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>Any shortfall state</SelectItem>
+                <SelectItem value={ANY}>All shortfall states</SelectItem>
                 {SHORTFALL_OPTIONS.map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
@@ -337,10 +337,10 @@ export function ApplicationFilters({ meta, total }: { meta: ApplicationMeta; tot
           <Field label="Service standard" htmlFor="filter-sla">
             <Select value={sla || ANY} onValueChange={(v) => apply({ sla: v })}>
               <SelectTrigger id="filter-sla" aria-label="Filter by service standard">
-                <SelectValue placeholder="Any SLA state" />
+                <SelectValue placeholder="All SLA states" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>Any SLA state</SelectItem>
+                <SelectItem value={ANY}>All SLA states</SelectItem>
                 {SLA_OPTIONS.map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}

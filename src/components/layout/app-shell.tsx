@@ -40,13 +40,28 @@ export function AppShell({
   const [collapsed, setCollapsed] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
+  const hour = new Date().getHours();
+  const timeOfDay = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
+  const firstName = user.name.split(' ')[0] || 'User';
+  const greeting = `Good ${timeOfDay.toLowerCase()}, ${firstName}`;
+
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex min-h-screen bg-bg">
         {/* Permanent rail, large screens up. */}
-        <aside className={cn('hidden lg:block shrink-0', collapsed ? 'w-16' : 'w-64')}>
-          <div className={cn('fixed inset-y-0 left-0 z-30', collapsed ? 'w-16' : 'w-64')}>
+        <aside className={cn('hidden lg:block shrink-0 transition-all duration-300 relative', collapsed ? 'w-16' : 'w-64')}>
+          <div className={cn('fixed inset-y-0 left-0 z-30 transition-all duration-300', collapsed ? 'w-16' : 'w-64')}>
             <Sidebar capabilities={user.capabilities} collapsed={collapsed} />
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute -right-3 top-1/2 -translate-y-1/2 z-40 hidden lg:flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface text-text-muted shadow-sm hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              onClick={() => setCollapsed((v) => !v)}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? <PanelLeft className="size-3.5" /> : <PanelLeftClose className="size-3.5" />}
+            </Button>
           </div>
         </aside>
 
@@ -59,7 +74,7 @@ export function AppShell({
         </Drawer>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border/80 bg-surface/85 px-3 sm:px-4 lg:px-6 backdrop-blur-md shadow-subtle transition-colors">
+          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border/80 bg-surface/85 px-1 sm:px-2 backdrop-blur-md shadow-subtle transition-colors">
             <Button
               variant="ghost"
               size="icon"
@@ -70,18 +85,10 @@ export function AppShell({
               <Menu />
             </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden lg:inline-flex"
-              onClick={() => setCollapsed((v) => !v)}
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {collapsed ? <PanelLeft /> : <PanelLeftClose />}
-            </Button>
+
 
             <div className="hidden min-w-0 sm:block">
-              <Breadcrumb />
+              <span className="text-sm font-medium text-text">{greeting}</span>
             </div>
 
             <div className="ml-auto flex items-center gap-2 sm:gap-3">
@@ -92,7 +99,7 @@ export function AppShell({
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 px-3 py-3.5 sm:px-4 lg:px-6">
+          <main className="min-w-0 flex-1 px-1 py-3.5 sm:px-2">
             <div className="w-full">{children}</div>
           </main>
         </div>

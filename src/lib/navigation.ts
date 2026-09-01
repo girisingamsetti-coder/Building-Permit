@@ -87,43 +87,12 @@ export const NAV: NavSection[] = [
   {
     label: 'Administration',
     items: [
-      { label: 'Users', href: '/admin/users', icon: Users, capabilities: [C.USER_MANAGE] },
-      { label: 'Roles', href: '/admin/roles', icon: Shield, capabilities: [C.ROLE_MANAGE] },
-      {
-        label: 'Organisation',
-        href: '/admin/organisation',
-        icon: Building2,
-        capabilities: [C.ORG_MANAGE],
-      },
-      {
-        label: 'Document types',
-        href: '/admin/document-types',
-        icon: FolderOpen,
-        capabilities: [C.MASTER_DATA_MANAGE],
-      },
-      {
-        label: 'SMS & Delivery logs',
-        href: '/admin/notifications/logs',
-        icon: MessageSquare,
-        capabilities: [C.NOTIFICATION_LOG_VIEW, C.SETTINGS_MANAGE],
-      },
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      {
-        label: 'Notification center',
-        href: '/notifications',
-        icon: MessageSquare,
-      },
       {
         label: 'Settings',
         href: '/admin/settings',
         icon: SlidersHorizontal,
-        capabilities: [C.SETTINGS_MANAGE],
+        capabilities: [C.SETTINGS_MANAGE, C.USER_MANAGE, C.ROLE_MANAGE, C.ORG_MANAGE, C.MASTER_DATA_MANAGE],
       },
-      { label: 'Profile', href: '/profile', icon: Settings2 },
     ],
   },
 ];

@@ -383,17 +383,17 @@ function RuleDialog({
             <Field
               label="Application type"
               htmlFor="applicationTypeId"
-              hint="Leave as Any to apply to every kind of permission."
+              hint="Leave as All to apply to every kind of permission."
             >
               <Select
                 value={applicationTypeId || ANY}
                 onValueChange={(v) => setApplicationTypeId(v === ANY ? '' : v)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="All application types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ANY}>Any application type</SelectItem>
+                  <SelectItem value={ANY}>All application types</SelectItem>
                   {meta.applicationTypes.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {t.name}

@@ -178,7 +178,7 @@ export function AccountsPanel({ accounts }: { accounts: ConsolidatedView['accoun
   return (
     <Panel
       title="User Accounts by Role"
-      action={{ href: '/admin/users', label: 'Manage users' }}
+      action={{ href: '/admin/settings/users', label: 'Manage users' }}
       bodyClassName="p-0"
     >
       <div className="overflow-x-auto">
@@ -198,7 +198,7 @@ export function AccountsPanel({ accounts }: { accounts: ConsolidatedView['accoun
               <TableRow key={row.roleKey}>
                 <TableCell>
                   <Link
-                    href={`/admin/users?role=${row.roleKey}`}
+                    href={`/admin/settings/users?role=${row.roleKey}`}
                     className="text-small text-text hover:text-primary hover:underline"
                   >
                     {row.name}
@@ -270,7 +270,7 @@ export function FilersPanel({ filers }: { filers: ConsolidatedView['filers'] }) 
               <TableRow key={filer.userId}>
                 <TableCell>
                   <Link
-                    href={`/admin/users/${filer.userId}`}
+                    href={`/admin/settings/users/${filer.userId}`}
                     className="text-small text-text hover:text-primary hover:underline"
                   >
                     {filer.name}

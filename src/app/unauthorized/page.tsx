@@ -30,7 +30,7 @@ export default function UnauthorizedPage() {
             <Link href="/dashboard">Go to dashboard</Link>
           </Button>
           <Button asChild variant="secondary">
-            <Link href="/profile">View my profile</Link>
+            <Link href="/admin/settings/profile">View my profile</Link>
           </Button>
         </div>
       </div>

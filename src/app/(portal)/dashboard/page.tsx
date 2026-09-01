@@ -20,7 +20,6 @@ import {
   AdminDashboard,
   ViewerDashboard,
   type ExecutiveRole,
-  type SystemCounts,
 } from '@/features/dashboard/dashboards';
 
 export const metadata: Metadata = { title: 'Dashboard' };
@@ -52,17 +51,15 @@ export default async function DashboardPage() {
 
     return (
       <>
-        <PageHeader
-          title={greeting}
-          actions={
-            <Button asChild variant="primary">
-              <Link href="/applications/new">
-                <FilePlus2 className="size-4" />
-                New application
-              </Link>
-            </Button>
-          }
-        />
+        {/* PageHeader removed by user request to move stat cards up */}
+        <div className="mb-4 flex justify-end">
+          <Button asChild variant="primary">
+            <Link href="/applications/new">
+              <FilePlus2 className="size-4" />
+              New application
+            </Link>
+          </Button>
+        </div>
         <LtpDashboard
           name={user.name}
           counts={stats.counts}
@@ -75,16 +72,15 @@ export default async function DashboardPage() {
 
   // ── The System Administrator ──────────────────────────────────────────
   if (kind === 'admin') {
-    const [data, counts, consolidated] = await Promise.all([
+    const [data, consolidated, activity] = await Promise.all([
       dashboardData(user),
-      systemCounts(),
       consolidatedView(user),
+      recentActivity(user, 15),
     ]);
 
     return (
       <>
-        <PageHeader title={greeting} />
-        <AdminDashboard data={data} counts={counts} consolidated={consolidated} />
+        <AdminDashboard data={data} consolidated={consolidated} activity={activity} />
       </>
     );
   }
@@ -101,17 +97,15 @@ export default async function DashboardPage() {
 
     return (
       <>
-        <PageHeader
-          title={greeting}
-          actions={
-            <Button asChild variant="primary">
-              <Link href="/tasks">
-                <ListChecks className="size-4" />
-                Open the queue
-              </Link>
-            </Button>
-          }
-        />
+        {/* PageHeader removed by user request */}
+        <div className="mb-4 flex justify-end">
+          <Button asChild variant="primary">
+            <Link href="/tasks">
+              <ListChecks className="size-4" />
+              Open the queue
+            </Link>
+          </Button>
+        </div>
         <ExecutiveDashboard data={data} role={role} queue={summary} />
       </>
     );
@@ -177,71 +171,6 @@ const ROLE_LABELS: Partial<Record<RoleKey, string>> = {
   ZDD: 'Zonal Deputy Director',
   ZJD: 'Zonal Joint Director',
 };
-
-/**
- * Configuration and platform counts for the administrator.
- *
- * Genuinely counted rows, every one. `failedJobs` and `unprocessedEvents` in
- * particular are the two figures that tell an administrator the background
- * worker has stopped — which is otherwise invisible until an applicant
- * complains that they were never told about a shortfall.
- */
-async function systemCounts(): Promise<SystemCounts> {
-  const [
-    users,
-    activeUsers,
-    roles,
-    permissions,
-    zones,
-    offices,
-    applicationTypes,
-    settings,
-    documentTypes,
-    auditEvents,
-    notificationsSent,
-    workflow,
-    failedJobs,
-    unprocessedEvents,
-  ] = await Promise.all([
-    prisma.user.count({ where: { deletedAt: null } }),
-    prisma.user.count({ where: { deletedAt: null, status: 'ACTIVE' } }),
-    prisma.role.count({ where: { deletedAt: null } }),
-    prisma.permission.count(),
-    prisma.zone.count({ where: { deletedAt: null } }),
-    prisma.office.count({ where: { deletedAt: null } }),
-    prisma.applicationType.count({ where: { deletedAt: null } }),
-    prisma.systemSetting.count(),
-    prisma.documentType.count({ where: { deletedAt: null } }),
-    prisma.auditLog.count(),
-    prisma.notificationLog.count({ where: { status: { in: ['SENT', 'DELIVERED'] } } }),
-    prisma.workflow.findFirst({
-      where: { isPublished: true },
-      select: { name: true, code: true, version: true },
-      orderBy: { version: 'desc' },
-    }),
-    prisma.job.count({ where: { status: 'DEAD' } }),
-    prisma.outboxEvent.count({ where: { processed: false } }),
-  ]);
-
-  return {
-    users,
-    activeUsers,
-    inactiveUsers: users - activeUsers,
-    roles,
-    permissions,
-    zones,
-    offices,
-    applicationTypes,
-    settings,
-    documentTypes,
-    auditEvents,
-    notificationsSent,
-    workflowPublished: Boolean(workflow),
-    workflowName: workflow ? `${workflow.name} · v${workflow.version}` : 'None published',
-    failedJobs,
-    unprocessedEvents,
-  };
-}
 
 function timeOfDay(): string {
   const hour = new Date().getHours();

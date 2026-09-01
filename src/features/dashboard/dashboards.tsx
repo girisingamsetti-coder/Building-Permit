@@ -23,7 +23,7 @@ import { statusMeta } from '@/lib/status';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/common/empty-state';
 import { formatMoney, formatMoneyCompact } from '@/lib/utils';
-import type { ConsolidatedView, DashboardData } from '@/server/services/analytics';
+import type { ConsolidatedView, DashboardData, ActivityEntry } from '@/server/services/analytics';
 import { BarList, DonutChart, ProgressBar, TrendChart, type Slice, type Tone } from './charts';
 import { ActivityFeed, Panel, SectionHeading, StatRow, WorkloadTable } from './panels';
 import {
@@ -264,25 +264,6 @@ function ShortfallsByStage({ data }: { data: DashboardData }) {
 // Super Admin — the whole system
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type SystemCounts = {
-  users: number;
-  activeUsers: number;
-  inactiveUsers: number;
-  roles: number;
-  permissions: number;
-  zones: number;
-  offices: number;
-  applicationTypes: number;
-  settings: number;
-  documentTypes: number;
-  auditEvents: number;
-  notificationsSent: number;
-  workflowPublished: boolean;
-  workflowName: string;
-  failedJobs: number;
-  unprocessedEvents: number;
-};
-
 /**
  * The System Administrator's view: everything, in one place.
  *
@@ -295,102 +276,118 @@ export function AdminDashboard({
   data,
   counts,
   consolidated,
+  activity,
 }: {
   data: DashboardData;
-  counts: SystemCounts;
   /** What every other role would see, gathered for the one login that sees all. */
   consolidated: ConsolidatedView;
+  activity: ActivityEntry[];
 }) {
   const { applications, finance, sla, shortfalls } = data;
 
   return (
     <div className="space-y-3.5">
-      <SectionHeading title="Caseload" />
+      <div className="flex flex-col xl:flex-row gap-6">
+        <div className="xl:w-3/4 space-y-5">
+          <div className="space-y-1.5">
+            <SectionHeading title="Caseload" />
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+              <KpiCard label="Total applications" value={applications.total} icon={FileText} href="/applications" tone="cyan" />
+              <KpiCard
+                label="In progress"
+                value={applications.inProgress}
+                tone="blue"
+                icon={Clock}
+              />
+              <KpiCard
+                label="Approved"
+                value={applications.approved}
+                tone="emerald"
+                icon={CheckCircle2}
+                href="/applications?bucket=approved"
+              />
+              <KpiCard
+                label="Rejected"
+                value={applications.rejected}
+                tone="rose"
+                icon={CircleX}
+              />
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total applications" value={applications.total} icon={FileText} href="/applications" />
-        <KpiCard
-          label="In progress"
-          value={applications.inProgress}
-          tone="info"
-          icon={Clock}
-        />
-        <KpiCard
-          label="Approved"
-          value={applications.approved}
-          tone={applications.approved ? 'success' : 'neutral'}
-          icon={CheckCircle2}
-          href="/applications?bucket=approved"
-        />
-        <KpiCard
-          label="Rejected"
-          value={applications.rejected}
-          tone={applications.rejected ? 'danger' : 'neutral'}
-          icon={CircleX}
-        />
-      </div>
+          <div className="space-y-1.5">
+            <SectionHeading title="Attention & SLA" />
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+              <KpiCard
+                label="Open shortfalls"
+                value={shortfalls.open}
+                tone="amber"
+                hint={shortfalls.overdue ? `${shortfalls.overdue} overdue` : undefined}
+                icon={AlertTriangle}
+                href="/shortfalls"
+              />
+              <KpiCard
+                label="Overdue tasks"
+                value={sla.overdue}
+                tone="red"
+                icon={Gauge}
+                href="/tasks?filter=overdue"
+              />
+              <KpiCard
+                label="Due soon"
+                value={sla.dueSoon}
+                tone="orange"
+                icon={Clock}
+                href="/tasks?filter=due-soon"
+              />
+              <KpiCard
+                label="Average time to decide"
+                value={sla.averageDaysToClose === null ? '—' : `${sla.averageDaysToClose} d`}
+                tone="indigo"
+                icon={Gauge}
+              />
+            </div>
+          </div>
 
-      <SectionHeading title="Attention & SLA" />
+          <div className="space-y-1.5">
+            <SectionHeading title="Revenue & Finance" />
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+              <KpiCard
+                label="Fees generated"
+                value={formatMoneyCompact(finance.generated)}
+                tone="violet"
+                icon={Banknote}
+              />
+              <KpiCard
+                label="Fees collected"
+                value={formatMoneyCompact(finance.collected)}
+                tone="green"
+                icon={CreditCard}
+                href="/payments"
+              />
+              <KpiCard
+                label="Pending fee"
+                value={formatMoneyCompact(finance.outstanding)}
+                tone="fuchsia"
+                icon={Banknote}
+              />
+              <KpiCard
+                label="Payment success rate"
+                value={`${finance.payments.successRate}%`}
+                tone="teal"
+                icon={CreditCard}
+              />
+            </div>
+          </div>
+        </div>
 
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          label="Open shortfalls"
-          value={shortfalls.open}
-          tone={shortfalls.open ? 'warning' : 'neutral'}
-          hint={shortfalls.overdue ? `${shortfalls.overdue} overdue` : undefined}
-          icon={AlertTriangle}
-          href="/shortfalls"
-        />
-        <KpiCard
-          label="Overdue tasks"
-          value={sla.overdue}
-          tone={sla.overdue ? 'danger' : 'neutral'}
-          icon={Gauge}
-          href="/tasks?filter=overdue"
-        />
-        <KpiCard
-          label="Due soon"
-          value={sla.dueSoon}
-          tone={sla.dueSoon ? 'warning' : 'neutral'}
-          icon={Clock}
-          href="/tasks?filter=due-soon"
-        />
-        <KpiCard
-          label="Average time to decide"
-          value={sla.averageDaysToClose === null ? '—' : `${sla.averageDaysToClose} d`}
-          icon={Gauge}
-        />
-      </div>
-
-      <SectionHeading title="Revenue & Finance" />
-
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          label="Fees generated"
-          value={formatMoneyCompact(finance.generated)}
-          hint={formatMoney(finance.generated)}
-          icon={Banknote}
-        />
-        <KpiCard
-          label="Fees collected"
-          value={formatMoneyCompact(finance.collected)}
-          tone="success"
-          hint={`${finance.receipts} receipts`}
-          icon={CreditCard}
-          href="/payments"
-        />
-        <KpiCard
-          label="Pending fee"
-          value={formatMoneyCompact(finance.outstanding)}
-          tone={finance.outstanding > 0 ? 'warning' : 'neutral'}
-          icon={Banknote}
-        />
-        <KpiCard
-          label="Payment success rate"
-          value={`${finance.payments.successRate}%`}
-          hint={`${finance.payments.successful} settled`}
-          icon={CreditCard}
-        />
+        <div className="xl:w-1/4 relative min-h-[400px] xl:min-h-0">
+          <div className="xl:absolute xl:inset-0 w-full h-full">
+            <Panel title="Recent Activity" icon={Clock} className="h-full flex flex-col" bodyClassName="flex-1 overflow-y-auto pr-2 min-h-0">
+              <ActivityFeed entries={activity} />
+            </Panel>
+          </div>
+        </div>
       </div>
 
       <SectionHeading title="Department Review Desks" />
@@ -438,67 +435,6 @@ export function AdminDashboard({
 
       <ShortfallsByStage data={data} />
 
-      <SectionHeading title="System Configuration" />
-
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          label="Users"
-          value={counts.users}
-          hint={`${counts.activeUsers} active`}
-          href="/admin/users"
-          icon={Users}
-        />
-        <KpiCard
-          label="Roles & permissions"
-          value={`${counts.roles} / ${counts.permissions}`}
-          href="/admin/roles"
-          icon={Shield}
-        />
-        <KpiCard
-          label="Zones & offices"
-          value={`${counts.zones} / ${counts.offices}`}
-          href="/admin/organisation"
-          icon={Building2}
-        />
-        <KpiCard
-          label="Settings"
-          value={counts.settings}
-          href="/admin/settings"
-          icon={Database}
-        />
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Panel title="System health">
-          <StatRow
-            label="Workflow"
-            value={counts.workflowPublished ? 'Published' : 'Not published'}
-            tone={counts.workflowPublished ? 'success' : 'danger'}
-            hint={counts.workflowName}
-          />
-          <StatRow
-            label="Failed background jobs"
-            value={counts.failedJobs}
-            tone={counts.failedJobs ? 'danger' : 'neutral'}
-          />
-          <StatRow
-            label="Unprocessed outbox events"
-            value={counts.unprocessedEvents}
-            tone={counts.unprocessedEvents > 20 ? 'warning' : 'neutral'}
-          />
-          <StatRow label="Notifications sent" value={counts.notificationsSent} />
-          <StatRow
-            label="Audit events recorded"
-            value={counts.auditEvents}
-          />
-          <StatRow label="Document types configured" value={counts.documentTypes} href="/admin/document-types" />
-          <StatRow label="Application types" value={counts.applicationTypes} href="/admin/settings" />
-        </Panel>
-
-        <Panel title="Recent activity">
-          <ActivityFeed entries={data.activity} />
-        </Panel>
-      </div>
     </div>
   );
 }
@@ -658,7 +594,7 @@ export function ExecutiveDashboard({
         </Panel>
       </div>
 
-      <Panel title="Recent activity">
+      <Panel title="Recent activity" className="!-mt-3.5 bg-gradient-to-b from-blue-50/50 to-transparent border-blue-100 shadow-inner">
         <ActivityFeed entries={data.activity} />
       </Panel>
     </div>
@@ -790,7 +726,7 @@ export function OfficerDashboard({
           </div>
         </Panel>
 
-        <Panel title="Recent activity">
+        <Panel title="Recent activity" className="!-mt-3.5 bg-gradient-to-b from-blue-50/50 to-transparent border-blue-100 shadow-inner">
           <ActivityFeed entries={data.activity} />
         </Panel>
       </div>
@@ -911,7 +847,7 @@ export function FinanceDashboard({ data }: { data: DashboardData }) {
           />
         </Panel>
 
-        <Panel title="Recent activity">
+        <Panel title="Recent activity" className="!-mt-3.5 bg-gradient-to-b from-blue-50/50 to-transparent border-blue-100 shadow-inner">
           <ActivityFeed entries={data.activity} />
         </Panel>
       </div>
@@ -968,7 +904,7 @@ export function ViewerDashboard({ data }: { data: DashboardData }) {
 
       <QualityPanels data={data} />
 
-      <Panel title="Recent activity">
+      <Panel title="Recent activity" className="!-mt-3.5 bg-gradient-to-b from-blue-50/50 to-transparent border-blue-100 shadow-inner">
         <ActivityFeed entries={data.activity} />
       </Panel>
     </div>

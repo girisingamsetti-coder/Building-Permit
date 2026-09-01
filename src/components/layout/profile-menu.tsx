@@ -86,14 +86,14 @@ export function ProfileMenu({
         <DropdownMenuSeparator className="my-1" />
 
         <DropdownMenuItem asChild className="rounded-lg p-2 text-small font-medium cursor-pointer">
-          <Link href="/profile">
+          <Link href="/admin/settings/profile">
             <UserIcon className="size-4 text-text-muted" />
             Profile settings
           </Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="rounded-lg p-2 text-small font-medium cursor-pointer">
-          <Link href="/profile?changePassword=1">
+          <Link href="/admin/settings/profile?changePassword=1">
             <KeyRound className="size-4 text-text-muted" />
             Change password
           </Link>

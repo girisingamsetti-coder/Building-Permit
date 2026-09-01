@@ -32,7 +32,7 @@ export function Panel({
   bodyClassName?: string;
 }) {
   return (
-    <Card className={className}>
+    <Card className={cn('font-inter', className)}>
       <CardHeader className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
         <div className="min-w-0">
           <CardTitle className="text-small font-bold text-text">{title}</CardTitle>
@@ -58,8 +58,8 @@ export function Panel({
  */
 export function SectionHeading({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 pt-0.5">
-      <h2 className="text-small font-bold tracking-tight text-text uppercase text-text-muted">{title}</h2>
+    <div className="flex w-full items-center justify-between rounded-xl border border-border bg-surface px-3 py-1.5 shadow-sm">
+      <h2 className="text-sm font-extrabold tracking-tight uppercase text-text-muted">{title}</h2>
       {hint && <p className="text-caption text-text-subtle">{hint}</p>}
     </div>
   );
@@ -135,13 +135,13 @@ export function ActivityFeed({
   return (
     <ol className="relative space-y-0">
       {entries.map((entry, index) => (
-        <li key={entry.id} className="relative flex gap-3 pb-4 last:pb-0">
+        <li key={entry.id} className="relative flex gap-3 pb-2.5 last:pb-0">
           {/* The rail, drawn per item and stopped on the last one so the line
               ends at the final event rather than trailing into the padding. */}
           <div className="flex flex-col items-center">
-            <span className="mt-1.5 size-2 shrink-0 rounded-full bg-border-strong" aria-hidden />
+            <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary/40" aria-hidden />
             {index < entries.length - 1 && (
-              <span className="w-px flex-1 bg-border" aria-hidden />
+              <span className="w-px flex-1 bg-border/50" aria-hidden />
             )}
           </div>
 

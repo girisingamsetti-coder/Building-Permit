@@ -23,7 +23,7 @@ export const POST = defineRoute<LoginInput>(
       // Where the client should go next. The server decides, so a role cannot
       // land somewhere it has no capability for.
       redirectTo: user.mustChangePassword
-        ? '/profile?changePassword=1'
+        ? '/admin/settings/profile?changePassword=1'
         : landingFor(user.roleKeys as RoleKey[]),
     };
   },

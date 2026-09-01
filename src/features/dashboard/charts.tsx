@@ -139,17 +139,19 @@ export function DonutChart({
     <div className={cn('flex flex-col gap-4 sm:flex-row sm:items-center', className)}>
       <div className="relative shrink-0" style={{ width: height, height }}>
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+          <PieChart style={{ outline: 'none' }}>
             <Pie
               data={shown}
               dataKey="value"
               nameKey="label"
               innerRadius="62%"
               outerRadius="100%"
-              paddingAngle={1}
+              paddingAngle={2}
+              cornerRadius={6}
               stroke="rgb(var(--surface))"
               strokeWidth={2}
               isAnimationActive={false}
+              style={{ outline: 'none' }}
             >
               {shown.map((slice) => (
                 <Cell key={slice.key} fill={TONE_COLOR[slice.tone]} />
@@ -224,45 +226,45 @@ export function BarList({
   }
 
   return (
-    <ul className={cn('space-y-2.5', className)}>
-      {shown.map((row) => {
-        const target = row.href ?? href?.(row.key);
-        const content = (
-          <>
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 truncate text-small text-text">{row.label}</span>
-              <span className="shrink-0 text-small font-medium tabular-nums text-text">
-                {row.value.toLocaleString('en-IN')}
-              </span>
-            </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-sm bg-surface-sunk">
-              <div
-                className="h-full rounded-sm"
-                style={{
-                  width: `${Math.max(2, (row.value / max) * 100)}%`,
-                  background: TONE_COLOR[row.tone ?? 'primary'],
-                }}
-              />
-            </div>
-          </>
-        );
-
-        return (
-          <li key={row.key}>
-            {target ? (
-              <a
-                href={target}
-                className="block rounded px-1 py-0.5 -mx-1 transition-colors hover:bg-surface-sunk focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                {content}
-              </a>
-            ) : (
-              content
-            )}
-          </li>
-        );
-      })}
-    </ul>
+    <div className={cn('h-64 w-full pt-4', className)}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={shown} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgb(var(--border))" />
+          <XAxis 
+            dataKey="label" 
+            tick={{ fontSize: 11, fill: 'rgb(var(--text-subtle))' }} 
+            tickLine={false} 
+            axisLine={false} 
+            dy={8}
+          />
+          <YAxis 
+            tick={{ fontSize: 11, fill: 'rgb(var(--text-subtle))' }} 
+            tickLine={false} 
+            axisLine={false} 
+            dx={-8}
+          />
+          <Tooltip 
+            cursor={{ fill: 'rgba(0,0,0, 0.05)' }}
+            content={({ active, payload }) => {
+              if (active && payload && payload.length) {
+                return (
+                  <div className="rounded border border-border bg-surface px-3 py-2 shadow-sm">
+                    <p className="text-small font-medium text-text">{payload[0]?.payload?.label}</p>
+                    <p className="text-small font-bold text-text-muted mt-0.5">{payload[0]?.value}</p>
+                  </div>
+                );
+              }
+              return null;
+            }}
+          />
+          <Bar dataKey="value" radius={[12, 12, 12, 12]} maxBarSize={24}>
+            {shown.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={TONE_COLOR[entry.tone ?? 'primary']} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
 
