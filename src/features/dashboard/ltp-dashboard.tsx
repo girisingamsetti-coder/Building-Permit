@@ -20,7 +20,7 @@ import { KpiCard } from '@/components/common/kpi-card';
 import { DataTable } from '@/components/common/data-table';
 import { EmptyState } from '@/components/common/empty-state';
 import { StatusBadge } from '@/components/common/status-badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -56,7 +56,7 @@ const ICONS: Record<BucketKey, React.ComponentType<{ className?: string }>> = {
 };
 
 export function LtpDashboard({
-  name,
+  name: _name,
   counts,
   recent,
   activity,
@@ -157,8 +157,7 @@ export function LtpDashboard({
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                An SLA clock starts when the file reaches a departmental stage. Timers arrive in
-                Phase 9.
+                SLA tracking begins once reaching departmental review.
               </TooltipContent>
             </Tooltip>
           ),
@@ -184,8 +183,8 @@ export function LtpDashboard({
   const nothingYet = (counts.total ?? 0) === 0;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="space-y-3.5">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
         {BUCKETS.map((bucket) => {
           const value = counts[bucket.key] ?? 0;
           return (
@@ -206,15 +205,12 @@ export function LtpDashboard({
       </div>
 
       <Card>
-        <CardHeader className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <CardTitle>Recent applications</CardTitle>
-            <CardDescription>The files you have touched most recently.</CardDescription>
-          </div>
-          <Button asChild size="sm" variant="ghost">
+        <CardHeader className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+          <CardTitle className="text-small font-bold text-text">Recent applications</CardTitle>
+          <Button asChild size="sm" variant="ghost" className="h-8 text-caption">
             <Link href="/applications">
               View all
-              <ArrowRight className="size-4" />
+              <ArrowRight className="size-3.5" />
             </Link>
           </Button>
         </CardHeader>
@@ -223,8 +219,8 @@ export function LtpDashboard({
           {nothingYet ? (
             <EmptyState
               icon={FilePlus2}
-              title="You have not filed anything yet"
-              description={`Start your first application, ${name.split(' ')[0]}. The wizard takes you through it a step at a time, and saves a draft as you go.`}
+              title="No applications filed yet"
+              description={`Start your first application to begin the permission workflow.`}
               action={
                 <Button asChild variant="primary">
                   <Link href="/applications/new">
@@ -247,13 +243,10 @@ export function LtpDashboard({
       </Card>
 
       {!nothingYet && (
-        <Panel
-          title="What has happened lately"
-          description="Every movement on your files, newest first."
-        >
+        <Panel title="Recent Activity">
           <ActivityFeed
             entries={activity}
-            emptyMessage="Nothing has happened on your applications yet."
+            emptyMessage="No activity recorded yet."
           />
         </Panel>
       )}

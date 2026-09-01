@@ -9,23 +9,31 @@ import { env } from '@/server/config/env';
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
-      <main className="flex flex-1 items-center justify-center px-4 py-10">
-        <div className="w-full max-w-[400px]">
-          <div className="mb-7 flex flex-col items-center text-center">
-            <div className="mb-3 grid size-12 place-items-center rounded-lg bg-primary text-primary-text">
-              <Building className="size-6" />
+    <div className="relative flex min-h-screen flex-col justify-between overflow-hidden bg-gradient-to-b from-slate-50 via-slate-100/60 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      {/* Decorative ambient gradients */}
+      <div className="pointer-events-none absolute -left-40 -top-40 size-96 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-600/10" />
+      <div className="pointer-events-none absolute -bottom-40 -right-40 size-96 rounded-full bg-indigo-500/10 blur-3xl dark:bg-indigo-600/10" />
+
+      <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
+        <div className="w-full max-w-[440px]">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <div className="mb-4 grid size-14 place-items-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-700 text-white shadow-xl shadow-blue-500/25 ring-4 ring-white/60 dark:ring-slate-800/60">
+              <Building className="size-7" />
             </div>
-            <h1 className="text-h1 tracking-tight text-text">{env.appName}</h1>
-            <p className="mt-1 text-small text-text-muted">Building permission approvals</p>
+            <h1 className="text-2xl font-bold tracking-tight text-text sm:text-3xl">{env.appName}</h1>
+            <p className="mt-1.5 text-small font-medium text-text-muted">
+              Online Building Permission & Scrutiny Management
+            </p>
           </div>
 
           {children}
         </div>
       </main>
 
-      <footer className="border-t border-border px-4 py-4 text-center text-caption text-text-subtle">
-        {env.appName} · {env.orgShortName}
+      <footer className="relative z-10 border-t border-border/60 bg-surface/40 px-4 py-3.5 text-center text-caption text-text-subtle backdrop-blur-sm">
+        <p>
+          {env.appName} · {env.orgShortName} &nbsp;|&nbsp; Municipal Administration &amp; Urban Development
+        </p>
       </footer>
     </div>
   );

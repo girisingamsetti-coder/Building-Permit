@@ -12,7 +12,6 @@ import {
   Lightbulb,
   Info,
   RotateCw,
-  FlaskConical,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -350,19 +349,6 @@ function RunCard({ run }: { run: ScrutinyRunRow }) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Provenance. A mock result must never be mistaken for a decision. */}
-        {result?.report?.isDemo && (
-          <div className="flex items-start gap-2 rounded border border-warning/30 bg-warning-bg px-3 py-2">
-            <FlaskConical className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
-            <p className="text-caption text-warning">
-              <strong>Demonstration result.</strong> This was produced by the{' '}
-              <span className="font-mono">{run.engineDriver}</span> engine, which does not read the
-              drawing and does not assess compliance with any building rule. It carries no statutory
-              weight.
-            </p>
-          </div>
-        )}
-
         {result && result.issues.length === 0 && (
           <div className="flex items-start gap-2 rounded border border-success/25 bg-success-bg px-3 py-2.5">
             <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" />

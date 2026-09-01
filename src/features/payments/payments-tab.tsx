@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  AlertTriangle,
   CheckCircle2,
   CreditCard,
   Download,
@@ -129,8 +128,6 @@ export function PaymentsTab({
 
   return (
     <div className="space-y-4">
-      {data.gateway.isDemo && <DemoGatewayNotice name={data.gateway.name} />}
-
       <Summary summary={data.summary} status={data.application.status} />
 
       {/* ── The gate ───────────────────────────────────────────────────── */}
@@ -196,32 +193,6 @@ export function PaymentsTab({
 // Notices
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * The demo gateway, named as such.
- *
- * Not decoration. A demonstration where the payment screen is
- * indistinguishable from the real one is a demonstration somebody will later
- * describe as "we tested payments".
- */
-function DemoGatewayNotice({ name }: { name: string }) {
-  return (
-    <div className="rounded border border-warning/30 bg-warning-bg px-4 py-3">
-      <div className="flex items-start gap-2.5">
-        <AlertTriangle className="mt-0.5 size-5 shrink-0 text-warning" />
-        <div className="min-w-0">
-          <p className="text-body font-medium text-warning">
-            This deployment uses a demonstration payment gateway
-          </p>
-          <p className="mt-0.5 text-small text-text-muted">
-            No money changes hands. Payments made here are simulated end to end — they credit the
-            demand, issue a receipt and move the application exactly as a real one would — and every
-            receipt produced is watermarked accordingly. Driver: <code>{name}</code>.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function BlockedNotice({ reason }: { reason: string }) {
   return (

@@ -31,14 +31,6 @@ export function DeskConsolidation({ desks }: { desks: ConsolidatedView['desks'] 
     // add two rows of dashes to a table about who is holding what.
     if (d.isTerminal) return false;
 
-    // The four pre-department stages (Filing, Drawing, Documents, Payment) are
-    // in the stage catalogue because the register labels them, but the ENGINE
-    // does not start until the payment gate — so an application before that
-    // point carries no `currentStageCode` and these rows read zero forever.
-    // That zero is a modelling artefact, not a fact about the department's
-    // workload, and printing it would invite somebody to conclude the filing
-    // desk is empty. Where those files really are is the panel next to this
-    // one. A stage that HAS acquired work is always shown, whoever owns it.
     const preDepartment = d.roleKeys.length === 1 && d.roleKeys[0] === 'LTP';
     const hasActivity = d.applications > 0 || d.openTasks > 0 || d.openShortfalls > 0;
 
@@ -47,9 +39,8 @@ export function DeskConsolidation({ desks }: { desks: ConsolidatedView['desks'] 
 
   return (
     <Panel
-      title="Every desk, consolidated"
-      description="What each role would see on their own dashboard, side by side. The same queries, grouped by stage instead of filtered to one."
-      action={{ href: '/tasks', label: 'Open the queue' }}
+      title="Department Desks Summary"
+      action={{ href: '/tasks', label: 'Open queue' }}
       bodyClassName="p-0"
     >
       <div className="overflow-x-auto">
@@ -92,26 +83,20 @@ export function DeskConsolidation({ desks }: { desks: ConsolidatedView['desks'] 
                       <span className="text-caption text-text-subtle">—</span>
                     )}
                   </div>
-                  {/* A desk with work and nobody able to do it is the single
-                      most useful thing this table can tell an administrator. */}
                   {desk.roleKeys.length > 0 && desk.officers === 0 ? (
                     <p className="mt-0.5 text-caption text-danger">No active account holds this role</p>
                   ) : (
                     <p className="mt-0.5 text-caption text-text-subtle">
-                      {desk.officers} active {desk.officers === 1 ? 'officer' : 'officers'}
+                      {desk.officers} active officer{desk.officers === 1 ? '' : 's'}
                     </p>
                   )}
                 </TableCell>
 
-                <TableCell className="text-right tabular-nums">{desk.applications || '—'}</TableCell>
+                <TableCell className="text-right tabular-nums font-semibold">{desk.applications}</TableCell>
                 <TableCell className="text-right tabular-nums">{desk.openTasks || '—'}</TableCell>
 
-                <TableCell className="text-right">
-                  {desk.unclaimed ? (
-                    <Badge tone="info">{desk.unclaimed}</Badge>
-                  ) : (
-                    <span className="tabular-nums text-text-subtle">—</span>
-                  )}
+                <TableCell className="text-right tabular-nums">
+                  {desk.unclaimed || '—'}
                 </TableCell>
 
                 <TableCell className="text-right">
@@ -146,12 +131,6 @@ export function DeskConsolidation({ desks }: { desks: ConsolidatedView['desks'] 
           </TableBody>
         </Table>
       </div>
-
-      <p className="border-t border-border px-4 py-2.5 text-caption text-text-muted">
-        &ldquo;Files here&rdquo; counts applications whose current stage is this desk.
-        &ldquo;Shortfalls&rdquo; counts open shortfalls RAISED at this desk, wherever the file has
-        since moved to. Overdue is reported, never enforced.
-      </p>
     </Panel>
   );
 }
@@ -160,13 +139,6 @@ export function DeskConsolidation({ desks }: { desks: ConsolidatedView['desks'] 
 // The applicant side
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * The half of the system no officer ever sees.
- *
- * Most files are here at any moment, and none of them appear on any desk's
- * queue — so without this panel the administrator's view of "where is the work"
- * is missing its largest column.
- */
 export function ApplicantSidePanel({
   applicantSide,
 }: {
@@ -185,10 +157,7 @@ export function ApplicantSidePanel({
   ];
 
   return (
-    <Panel
-      title="With the applicant"
-      description="The half of the system that never appears on an officer's queue — and where most files are at any moment."
-    >
+    <Panel title="Applicant-Side Pipeline">
       <div className="mb-4 flex items-baseline gap-2">
         <span className="text-[26px] font-semibold leading-none tabular-nums text-text">
           {applicantSide.totalWithApplicant.toLocaleString('en-IN')}
@@ -208,8 +177,7 @@ export function ApplicantSidePanel({
 export function AccountsPanel({ accounts }: { accounts: ConsolidatedView['accounts'] }) {
   return (
     <Panel
-      title="Accounts by role"
-      description="Who exists, who is active, and who has actually signed in."
+      title="User Accounts by Role"
       action={{ href: '/admin/users', label: 'Manage users' }}
       bodyClassName="p-0"
     >
@@ -262,11 +230,6 @@ export function AccountsPanel({ accounts }: { accounts: ConsolidatedView['accoun
           </TableBody>
         </Table>
       </div>
-
-      <p className="border-t border-border px-4 py-2.5 text-caption text-text-muted">
-        An account that has never signed in is either somebody who was never told, or a desk nobody
-        is covering. Both look like a working system until a file arrives.
-      </p>
     </Panel>
   );
 }
@@ -278,16 +241,15 @@ export function AccountsPanel({ accounts }: { accounts: ConsolidatedView['accoun
 export function FilersPanel({ filers }: { filers: ConsolidatedView['filers'] }) {
   if (!filers.length) {
     return (
-      <Panel title="Who is filing" description="Licensed technical persons, by volume.">
-        <p className="py-6 text-center text-small text-text-subtle">Nobody has filed anything yet.</p>
+      <Panel title="Licensed Technical Persons (LTP)">
+        <p className="py-6 text-center text-small text-text-subtle">No technical persons registered yet.</p>
       </Panel>
     );
   }
 
   return (
     <Panel
-      title="Who is filing"
-      description="Licensed technical persons by volume, and how their files have fared."
+      title="Licensed Technical Persons (LTP)"
       bodyClassName="p-0"
     >
       <div className="overflow-x-auto">
@@ -342,11 +304,6 @@ export function FilersPanel({ filers }: { filers: ConsolidatedView['filers'] }) 
           </TableBody>
         </Table>
       </div>
-
-      <p className="border-t border-border px-4 py-2.5 text-caption text-text-muted">
-        Descriptive, not a score. A licensee working difficult sites will see more shortfalls than
-        one filing simple dwellings; these columns say what happened, not who is at fault.
-      </p>
     </Panel>
   );
 }

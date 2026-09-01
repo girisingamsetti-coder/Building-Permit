@@ -20,7 +20,7 @@ import {
 import { KpiCard } from '@/components/common/kpi-card';
 import { Badge } from '@/components/ui/badge';
 import { statusMeta } from '@/lib/status';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/common/empty-state';
 import { formatMoney, formatMoneyCompact } from '@/lib/utils';
 import type { ConsolidatedView, DashboardData } from '@/server/services/analytics';
@@ -117,10 +117,9 @@ function MoneyPanels({ data }: { data: DashboardData }) {
   const { finance } = data;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-3 lg:grid-cols-2">
       <Panel
         title="Fees and collection"
-        description="Demands raised against these applications, and what has actually been received."
         action={{ href: '/payments', label: 'Payments register' }}
       >
         <ProgressBar
@@ -131,7 +130,7 @@ function MoneyPanels({ data }: { data: DashboardData }) {
           valueLabel={`${formatMoney(finance.collected)} of ${formatMoney(finance.generated)}`}
         />
 
-        <div className="mt-4">
+        <div className="mt-3">
           <StatRow
             label="Demands issued"
             value={finance.demandsIssued}
@@ -141,36 +140,30 @@ function MoneyPanels({ data }: { data: DashboardData }) {
             label="Outstanding"
             value={formatMoney(finance.outstanding)}
             tone={finance.outstanding > 0 ? 'warning' : 'neutral'}
-            hint="Still owed on live demands"
           />
           <StatRow label="Receipts issued" value={finance.receipts} />
         </div>
       </Panel>
 
-      <Panel
-        title="Payment attempts"
-        description="Every attempt against every demand, including the ones that did not settle."
-      >
+      <Panel title="Payment attempts">
         <div className="flex items-baseline gap-2">
           <span className="text-[26px] font-semibold leading-none tabular-nums text-text">
             {finance.payments.successRate}%
           </span>
-          <span className="text-small text-text-muted">of decided attempts settled</span>
+          <span className="text-small text-text-muted">settlement success rate</span>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-3">
           <StatRow label="Settled" value={finance.payments.successful} tone="success" />
           <StatRow label="Declined" value={finance.payments.failed} tone={finance.payments.failed ? 'danger' : 'neutral'} />
           <StatRow
             label="In flight"
             value={finance.payments.pending}
             tone={finance.payments.pending ? 'info' : 'neutral'}
-            hint="Handed to the gateway, no verdict yet"
           />
           <StatRow
             label="Cancelled or timed out"
             value={finance.payments.cancelled}
-            hint="Excluded from the rate above only while undecided"
           />
         </div>
       </Panel>
@@ -183,11 +176,8 @@ function QualityPanels({ data }: { data: DashboardData }) {
   const { scrutiny, shortfalls } = data;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Panel
-        title="Automated scrutiny"
-        description="Drawing checks run by the scrutiny engine, and what they found."
-      >
+    <div className="grid gap-3 lg:grid-cols-2">
+      <Panel title="Automated scrutiny">
         <DonutChart
           totalLabel="Runs"
           slices={[
@@ -199,7 +189,7 @@ function QualityPanels({ data }: { data: DashboardData }) {
           height={168}
         />
 
-        <div className="mt-4">
+        <div className="mt-3">
           <StatRow
             label="Awaiting a corrected drawing"
             value={scrutiny.awaitingCorrection}
@@ -217,7 +207,6 @@ function QualityPanels({ data }: { data: DashboardData }) {
 
       <Panel
         title="Shortfalls"
-        description="What the department has asked applicants for, and whether it has come back."
         action={{ href: '/shortfalls', label: 'Shortfall register' }}
       >
         <BarList
@@ -231,13 +220,12 @@ function QualityPanels({ data }: { data: DashboardData }) {
           ]}
         />
 
-        <div className="mt-4">
+        <div className="mt-3">
           <StatRow label="Open" value={shortfalls.open} tone={shortfalls.open ? 'warning' : 'neutral'} />
           <StatRow label="Resolved" value={shortfalls.resolved} tone="success" />
           <StatRow
             label="Blocking / reported"
             value={`${shortfalls.byMode.blocking} / ${shortfalls.byMode.reported}`}
-            hint="A reported shortfall travels with the file and still blocks approval"
           />
           <StatRow
             label="Awaiting an officer's verdict"
@@ -245,10 +233,9 @@ function QualityPanels({ data }: { data: DashboardData }) {
             tone={shortfalls.awaitingReview ? 'info' : 'neutral'}
           />
           <StatRow
-            label="Raised but never announced"
+            label="Pending notification"
             value={shortfalls.neverNotified}
             tone={shortfalls.neverNotified ? 'danger' : 'neutral'}
-            hint="From the applicant's side this is indistinguishable from silence"
           />
         </div>
       </Panel>
@@ -259,10 +246,7 @@ function QualityPanels({ data }: { data: DashboardData }) {
 /** Where the shortfalls were raised — pendency by desk, for a supervisor. */
 function ShortfallsByStage({ data }: { data: DashboardData }) {
   return (
-    <Panel
-      title="Open shortfalls by desk"
-      description="Which stage asked for something that has not yet come back."
-    >
+    <Panel title="Open shortfalls by desk">
       <BarList
         emptyLabel="Nothing outstanding at any desk."
         rows={data.shortfalls.byStage.map((s) => ({
@@ -320,16 +304,15 @@ export function AdminDashboard({
   const { applications, finance, sla, shortfalls } = data;
 
   return (
-    <div className="space-y-6">
-      <SectionHeading title="Caseload" hint="Every application in the system." />
+    <div className="space-y-3.5">
+      <SectionHeading title="Caseload" />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="Total applications" value={applications.total} icon={FileText} href="/applications" />
         <KpiCard
           label="In progress"
           value={applications.inProgress}
           tone="info"
-          hint="Filed and not yet closed"
           icon={Clock}
         />
         <KpiCard
@@ -347,14 +330,14 @@ export function AdminDashboard({
         />
       </div>
 
-      <SectionHeading title="Attention" hint="What is stuck, late or unanswered." />
+      <SectionHeading title="Attention & SLA" />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Open shortfalls"
           value={shortfalls.open}
           tone={shortfalls.open ? 'warning' : 'neutral'}
-          hint={shortfalls.overdue ? `${shortfalls.overdue} past their due date` : 'Nothing overdue'}
+          hint={shortfalls.overdue ? `${shortfalls.overdue} overdue` : undefined}
           icon={AlertTriangle}
           href="/shortfalls"
         />
@@ -362,7 +345,6 @@ export function AdminDashboard({
           label="Overdue tasks"
           value={sla.overdue}
           tone={sla.overdue ? 'danger' : 'neutral'}
-          hint="Reported, never enforced"
           icon={Gauge}
           href="/tasks?filter=overdue"
         />
@@ -376,14 +358,13 @@ export function AdminDashboard({
         <KpiCard
           label="Average time to decide"
           value={sla.averageDaysToClose === null ? '—' : `${sla.averageDaysToClose} d`}
-          hint="Filing to decision, closed files only"
           icon={Gauge}
         />
       </div>
 
-      <SectionHeading title="Money" hint="Demands raised and money received." />
+      <SectionHeading title="Revenue & Finance" />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Fees generated"
           value={formatMoneyCompact(finance.generated)}
@@ -394,7 +375,7 @@ export function AdminDashboard({
           label="Fees collected"
           value={formatMoneyCompact(finance.collected)}
           tone="success"
-          hint={`${finance.receipts} receipts issued`}
+          hint={`${finance.receipts} receipts`}
           icon={CreditCard}
           href="/payments"
         />
@@ -402,21 +383,17 @@ export function AdminDashboard({
           label="Pending fee"
           value={formatMoneyCompact(finance.outstanding)}
           tone={finance.outstanding > 0 ? 'warning' : 'neutral'}
-          hint="Outstanding on live demands"
           icon={Banknote}
         />
         <KpiCard
           label="Payment success rate"
           value={`${finance.payments.successRate}%`}
-          hint={`${finance.payments.successful} settled · ${finance.payments.failed} declined`}
+          hint={`${finance.payments.successful} settled`}
           icon={CreditCard}
         />
       </div>
 
-      <SectionHeading
-        title="Every login, consolidated"
-        hint="What each role sees on their own dashboard, gathered here."
-      />
+      <SectionHeading title="Department Review Desks" />
 
       <PipelineStrip
         applicantSide={consolidated.applicantSide}
@@ -427,9 +404,9 @@ export function AdminDashboard({
 
       <DeskConsolidation desks={consolidated.desks} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <ApplicantSidePanel applicantSide={consolidated.applicantSide} />
-        <Panel title="Workload" description="Who is holding open files, and what nobody has picked up.">
+        <Panel title="Officer Workload">
           <WorkloadTable rows={data.workload} />
         </Panel>
       </div>
@@ -437,29 +414,22 @@ export function AdminDashboard({
       <AccountsPanel accounts={consolidated.accounts} />
       <FilersPanel filers={consolidated.filers} />
 
-      <SectionHeading title="Analysis" hint="Volume, throughput, money and quality." />
+      <SectionHeading title="Analytics & Trends" />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Panel
           title="Applications by status"
-          description="Grouped into the vocabulary the register filters by."
           action={{ href: '/applications', label: 'Open the register' }}
         >
           <DonutChart slices={statusSlices(data)} total={applications.total} totalLabel="Files" />
         </Panel>
 
-        <Panel
-          title="Where the files are"
-          description="The desk each application is currently sitting at."
-        >
+        <Panel title="Applications by stage">
           <BarList rows={stageRows(data)} emptyLabel="No application has reached a stage yet." />
         </Panel>
       </div>
 
-      <Panel
-        title="Volume over time"
-        description="Applications started, filed and decided, by month."
-      >
+      <Panel title="Volume over time">
         <TrendChart data={data.trend} series={TREND_SERIES} />
       </Panel>
 
@@ -468,13 +438,13 @@ export function AdminDashboard({
 
       <ShortfallsByStage data={data} />
 
-      <SectionHeading title="Configuration and platform" />
+      <SectionHeading title="System Configuration" />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Users"
           value={counts.users}
-          hint={`${counts.activeUsers} active · ${counts.inactiveUsers} not active`}
+          hint={`${counts.activeUsers} active`}
           href="/admin/users"
           icon={Users}
         />
@@ -498,8 +468,8 @@ export function AdminDashboard({
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="System health" description="What the platform is doing behind the screens.">
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Panel title="System health">
           <StatRow
             label="Workflow"
             value={counts.workflowPublished ? 'Published' : 'Not published'}
@@ -510,28 +480,22 @@ export function AdminDashboard({
             label="Failed background jobs"
             value={counts.failedJobs}
             tone={counts.failedJobs ? 'danger' : 'neutral'}
-            hint="Dead-lettered after exhausting their retries"
           />
           <StatRow
             label="Unprocessed outbox events"
             value={counts.unprocessedEvents}
             tone={counts.unprocessedEvents > 20 ? 'warning' : 'neutral'}
-            hint="Written inside a transaction, dispatched by the worker"
           />
           <StatRow label="Notifications sent" value={counts.notificationsSent} />
           <StatRow
             label="Audit events recorded"
             value={counts.auditEvents}
-            hint="Append-only and hash-chained"
           />
           <StatRow label="Document types configured" value={counts.documentTypes} href="/admin/document-types" />
           <StatRow label="Application types" value={counts.applicationTypes} href="/admin/settings" />
         </Panel>
 
-        <Panel
-          title="Recent activity"
-          description="The latest entries from every application's timeline."
-        >
+        <Panel title="Recent activity">
           <ActivityFeed entries={data.activity} />
         </Panel>
       </div>
@@ -580,16 +544,15 @@ export function ExecutiveDashboard({
   const copy = EXECUTIVE_COPY[role];
 
   return (
-    <div className="space-y-6">
-      <SectionHeading title="Your desk" hint="What is waiting on a decision from you." />
+    <div className="space-y-3.5">
+      <SectionHeading title="Your desk" />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label={copy.desk} value={queue.total} hint={copy.deskHint} icon={ClipboardCheck} href="/tasks" />
         <KpiCard
           label="Unclaimed"
           value={queue.unclaimed}
           tone={queue.unclaimed ? 'info' : 'neutral'}
-          hint="Nobody has opened these yet"
           icon={ClipboardCheck}
           href="/tasks?filter=new"
         />
@@ -603,15 +566,14 @@ export function ExecutiveDashboard({
           label="Overdue"
           value={queue.overdue}
           tone={queue.overdue ? 'danger' : 'neutral'}
-          hint="Reported, never enforced"
           icon={AlertTriangle}
           href="/tasks?filter=overdue"
         />
       </div>
 
-      <SectionHeading title="The department" hint="Volume, throughput and where files are held." />
+      <SectionHeading title="Department Overview" />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="Total applications" value={applications.total} icon={FileText} href="/applications" />
         <KpiCard label="In progress" value={applications.inProgress} tone="info" icon={Clock} />
         <KpiCard
@@ -624,12 +586,11 @@ export function ExecutiveDashboard({
         <KpiCard
           label="Average time to decide"
           value={sla.averageDaysToClose === null ? '—' : `${sla.averageDaysToClose} d`}
-          hint="Filing to decision"
           icon={Gauge}
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Panel
           title="Applications by status"
           action={{ href: '/applications', label: 'Open the register' }}
@@ -637,32 +598,30 @@ export function ExecutiveDashboard({
           <DonutChart slices={statusSlices(data)} total={applications.total} totalLabel="Files" />
         </Panel>
 
-        <Panel title="Stage-wise pendency" description="Where applications are currently held.">
+        <Panel title="Stage-wise pendency">
           <BarList rows={stageRows(data)} emptyLabel="No application is in the pipeline." />
         </Panel>
       </div>
 
-      <Panel title="Approvals over time" description="Started, filed and decided, by month.">
+      <Panel title="Approvals over time">
         <TrendChart data={data.trend} series={TREND_SERIES} />
       </Panel>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Reported shortfalls" description="Raised at a lower desk and travelling with the file.">
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Panel title="Reported shortfalls">
           <StatRow
             label="Open — reported"
             value={shortfalls.byMode.reported}
             tone={shortfalls.byMode.reported ? 'warning' : 'neutral'}
-            hint="Blocks approval exactly as a blocking shortfall does"
           />
           <StatRow
             label="Open — blocking"
             value={shortfalls.byMode.blocking}
             tone={shortfalls.byMode.blocking ? 'warning' : 'neutral'}
-            hint="The file is parked with the applicant"
           />
           <StatRow label="Resolved" value={shortfalls.resolved} tone="success" />
           <StatRow
-            label="Past their due date"
+            label="Past due date"
             value={shortfalls.overdue}
             tone={shortfalls.overdue ? 'danger' : 'neutral'}
           />
@@ -679,7 +638,7 @@ export function ExecutiveDashboard({
           </div>
         </Panel>
 
-        <Panel title="Collection" description="Demands raised against these applications, and receipts.">
+        <Panel title="Collection">
           <ProgressBar
             value={finance.collected}
             total={finance.generated}
@@ -687,7 +646,7 @@ export function ExecutiveDashboard({
             label="Collected against demands raised"
             valueLabel={`${formatMoney(finance.collected)} of ${formatMoney(finance.generated)}`}
           />
-          <div className="mt-4">
+          <div className="mt-3">
             <StatRow label="Demands issued" value={finance.demandsIssued} />
             <StatRow
               label="Outstanding"
@@ -699,7 +658,7 @@ export function ExecutiveDashboard({
         </Panel>
       </div>
 
-      <Panel title="Recent activity" description="The latest entries from the files you can see.">
+      <Panel title="Recent activity">
         <ActivityFeed entries={data.activity} />
       </Panel>
     </div>
@@ -710,12 +669,6 @@ export function ExecutiveDashboard({
 // Officer — TPA, ZAD, ZDD, ZJD
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * The officer's dashboard.
- *
- * Every figure is scoped the same way the queue at /tasks is, so a tile
- * reading 7 and a list showing 5 rows is not a state this can produce.
- */
 export function OfficerDashboard({
   summary,
   data,
@@ -740,16 +693,15 @@ export function OfficerDashboard({
   const { shortfalls, finance, applications } = data;
 
   return (
-    <div className="space-y-6">
-      <SectionHeading title="Your queue" hint={`Files at the ${roleLabel} desk, within your jurisdiction.`} />
+    <div className="space-y-3.5">
+      <SectionHeading title={`${roleLabel} Desk Queue`} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="At your desk" value={summary.total} icon={ClipboardCheck} href="/tasks" />
         <KpiCard
           label="Unclaimed"
           value={summary.unclaimed}
           tone={summary.unclaimed ? 'info' : 'neutral'}
-          hint="In the shared inbox"
           icon={ClipboardCheck}
           href="/tasks?filter=new"
         />
@@ -758,20 +710,15 @@ export function OfficerDashboard({
           label="Overdue"
           value={summary.overdue}
           tone={summary.overdue ? 'danger' : 'neutral'}
-          hint="Reported, not enforced"
           icon={AlertTriangle}
           href="/tasks?filter=overdue"
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Waiting longest</CardTitle>
-            <CardDescription>
-              The files at your desk that have been there longest. The full queue, with its
-              filters, is on the Tasks page.
-            </CardDescription>
           </CardHeader>
           <CardContent className={recent.length ? 'space-y-1 p-3' : 'p-0'}>
             {recent.length ? (
@@ -779,7 +726,7 @@ export function OfficerDashboard({
                 <Link
                   key={task.id}
                   href={`/applications/${task.applicationId}?tab=workflow`}
-                  className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded px-2 py-2 hover:bg-surface-sunk"
+                  className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-lg px-2.5 py-2 transition-colors hover:bg-surface-sunk"
                 >
                   <span className="min-w-0">
                     <span className="font-medium tabular-nums text-text">{task.applicationNumber}</span>
@@ -818,7 +765,6 @@ export function OfficerDashboard({
             label="Awaiting your verdict"
             value={shortfalls.awaitingReview}
             tone={shortfalls.awaitingReview ? 'info' : 'neutral'}
-            hint="The applicant has answered"
           />
           <StatRow label="Document" value={shortfalls.byKind.DOCUMENT ?? 0} />
           <StatRow label="Fee" value={shortfalls.byKind.FEE ?? 0} />
@@ -830,10 +776,10 @@ export function OfficerDashboard({
         </Panel>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Applications in your jurisdiction" description="Everything you can see, by stage.">
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Panel title="Applications in your jurisdiction">
           <BarList rows={stageRows(data)} emptyLabel="Nothing in your jurisdiction yet." />
-          <div className="mt-4">
+          <div className="mt-3">
             <StatRow label="Total visible" value={applications.total} href="/applications" />
             <StatRow label="Approved" value={applications.approved} tone="success" />
             <StatRow
@@ -844,7 +790,7 @@ export function OfficerDashboard({
           </div>
         </Panel>
 
-        <Panel title="Recent activity" description="The latest movements on files you can see.">
+        <Panel title="Recent activity">
           <ActivityFeed entries={data.activity} />
         </Panel>
       </div>
@@ -874,10 +820,10 @@ export function FinanceDashboard({ data }: { data: DashboardData }) {
   ];
 
   return (
-    <div className="space-y-6">
-      <SectionHeading title="Collection" hint="Demands raised, money received, money owed." />
+    <div className="space-y-3.5">
+      <SectionHeading title="Collection & Demands" />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Demands issued"
           value={finance.demandsIssued}
@@ -906,14 +852,13 @@ export function FinanceDashboard({ data }: { data: DashboardData }) {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Demands by status" description="Every demand raised against a live application.">
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Panel title="Demands by status">
           <DonutChart slices={demandSlices} totalLabel="Demands" />
         </Panel>
 
         <Panel
           title="Payment attempts"
-          description="Including the ones that did not settle — a register that shows only successes is not a register."
           action={{ href: '/payments', label: 'Payments register' }}
         >
           <DonutChart
@@ -931,28 +876,26 @@ export function FinanceDashboard({ data }: { data: DashboardData }) {
             ]}
             height={168}
           />
-          <div className="mt-4">
+          <div className="mt-3">
             <StatRow
               label="Success rate"
               value={`${finance.payments.successRate}%`}
-              hint="Of attempts that reached a verdict"
             />
             <StatRow
               label="Awaiting reconciliation"
               value={finance.payments.pending}
               tone={finance.payments.pending ? 'info' : 'neutral'}
-              hint="Verified server-side by the sweep, never trusted from the browser"
             />
           </div>
         </Panel>
       </div>
 
-      <Panel title="Volume over time" description="Applications started, filed and decided, by month.">
+      <Panel title="Volume over time">
         <TrendChart data={data.trend} series={TREND_SERIES} />
       </Panel>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Fee shortfalls" description="Money asked for after the original demand.">
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Panel title="Fee shortfalls">
           <StatRow
             label="Open fee shortfalls"
             value={data.shortfalls.byKind.FEE ?? 0}
@@ -968,7 +911,7 @@ export function FinanceDashboard({ data }: { data: DashboardData }) {
           />
         </Panel>
 
-        <Panel title="Recent activity" description="The latest movements across the register.">
+        <Panel title="Recent activity">
           <ActivityFeed entries={data.activity} />
         </Panel>
       </div>
@@ -980,13 +923,12 @@ export function FinanceDashboard({ data }: { data: DashboardData }) {
 // Viewer / auditor
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Read-only oversight: the same figures, none of the action links. */
 export function ViewerDashboard({ data }: { data: DashboardData }) {
   const { applications, sla, shortfalls, finance } = data;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-3.5">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="Total applications" value={applications.total} icon={FileText} href="/applications" />
         <KpiCard label="In progress" value={applications.inProgress} tone="info" icon={Clock} />
         <KpiCard label="Approved" value={applications.approved} tone="success" icon={CheckCircle2} />
@@ -1011,7 +953,7 @@ export function ViewerDashboard({ data }: { data: DashboardData }) {
         <KpiCard label="Application types" value={applications.byType.length} icon={Layers} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Panel title="Applications by status">
           <DonutChart slices={statusSlices(data)} total={applications.total} totalLabel="Files" />
         </Panel>

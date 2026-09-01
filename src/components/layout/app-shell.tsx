@@ -10,8 +10,9 @@ import { ProfileMenu } from './profile-menu';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+
+import { QuickPersonaSwitcher } from './quick-persona-switcher';
 
 export type ShellUser = {
   name: string;
@@ -29,11 +30,11 @@ export type ShellUser = {
  */
 export function AppShell({
   user,
-  demoMode,
+  demoMode: _demoMode,
   children,
 }: {
   user: ShellUser;
-  demoMode: boolean;
+  demoMode?: boolean;
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = React.useState(false);
@@ -43,22 +44,22 @@ export function AppShell({
     <TooltipProvider delayDuration={300}>
       <div className="flex min-h-screen bg-bg">
         {/* Permanent rail, large screens up. */}
-        <aside className={cn('hidden lg:block', collapsed ? 'w-14' : 'w-60')}>
-          <div className={cn('fixed inset-y-0 left-0 z-30', collapsed ? 'w-14' : 'w-60')}>
+        <aside className={cn('hidden lg:block shrink-0', collapsed ? 'w-16' : 'w-64')}>
+          <div className={cn('fixed inset-y-0 left-0 z-30', collapsed ? 'w-16' : 'w-64')}>
             <Sidebar capabilities={user.capabilities} collapsed={collapsed} />
           </div>
         </aside>
 
         {/* Drawer, below large. */}
         <Drawer open={mobileOpen} onOpenChange={setMobileOpen}>
-          <DrawerContent side="left" className="w-60 max-w-[80vw] p-0">
+          <DrawerContent side="left" className="w-64 max-w-[80vw] p-0 border-r border-border">
             <DrawerTitle className="sr-only">Navigation</DrawerTitle>
             <Sidebar capabilities={user.capabilities} onNavigate={() => setMobileOpen(false)} />
           </DrawerContent>
         </Drawer>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border bg-surface px-3 sm:px-4">
+          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border/80 bg-surface/85 px-3 sm:px-4 lg:px-6 backdrop-blur-md shadow-subtle transition-colors">
             <Button
               variant="ghost"
               size="icon"
@@ -83,29 +84,16 @@ export function AppShell({
               <Breadcrumb />
             </div>
 
-            <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            <div className="ml-auto flex items-center gap-2 sm:gap-3">
               <GlobalSearch />
-
-              {demoMode && (
-                <Badge tone="warning" className="hidden sm:inline-flex">
-                  Demo mode
-                </Badge>
-              )}
-
+              <QuickPersonaSwitcher currentEmail={user.email} />
               <NotificationBell />
               <ProfileMenu name={user.name} email={user.email} roleNames={user.roleNames} />
             </div>
           </header>
 
-          {demoMode && (
-            <div className="border-b border-warning/30 bg-warning-bg px-4 py-1.5 text-caption text-warning">
-              Demo mode — external services are mocked. Nothing here is a compliance decision, a real
-              payment or a delivered message.
-            </div>
-          )}
-
-          <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-[1440px]">{children}</div>
+          <main className="min-w-0 flex-1 px-3 py-3.5 sm:px-4 lg:px-6">
+            <div className="w-full">{children}</div>
           </main>
         </div>
       </div>

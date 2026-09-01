@@ -5,13 +5,11 @@ import {
   AlertTriangle,
   CreditCard,
   FolderOpen,
-  BarChart3,
   Settings2,
   Users,
   Shield,
   Building2,
   SlidersHorizontal,
-  ScrollText,
   type LucideIcon,
 } from 'lucide-react';
 import { CAPABILITIES as C, type Capability } from './constants';
@@ -86,25 +84,6 @@ export const NAV: NavSection[] = [
     ],
   },
   {
-    label: 'Insight',
-    items: [
-      {
-        label: 'Reports',
-        href: '/reports',
-        icon: ScrollText,
-        capabilities: [C.REPORT_VIEW],
-        comingIn: 'Phase 10',
-      },
-      {
-        label: 'Analytics',
-        href: '/analytics',
-        icon: BarChart3,
-        capabilities: [C.ANALYTICS_VIEW],
-        comingIn: 'Phase 10',
-      },
-    ],
-  },
-  {
     label: 'Administration',
     items: [
       { label: 'Users', href: '/admin/users', icon: Users, capabilities: [C.USER_MANAGE] },
@@ -116,17 +95,10 @@ export const NAV: NavSection[] = [
         capabilities: [C.ORG_MANAGE],
       },
       {
-        label: 'Documents',
+        label: 'Document types',
         href: '/admin/document-types',
         icon: FolderOpen,
         capabilities: [C.MASTER_DATA_MANAGE],
-      },
-      {
-        label: 'Audit log',
-        href: '/admin/audit',
-        icon: ScrollText,
-        capabilities: [C.AUDIT_VIEW],
-        comingIn: 'Phase 10',
       },
     ],
   },

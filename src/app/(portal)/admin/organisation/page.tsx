@@ -3,7 +3,7 @@ import { requirePageCapability } from '@/server/auth/page-guard';
 import { CAPABILITIES } from '@/lib/constants';
 import { prisma } from '@/server/db/prisma';
 import { PageHeader } from '@/components/common/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
@@ -40,18 +40,12 @@ export default async function OrganisationPage() {
 
   return (
     <>
-      <PageHeader
-        title="Organisation"
-        description="Departments, zones and offices. Zone membership is what scopes an officer's view of the register."
-      />
+      <PageHeader title="Organisation Hierarchy" />
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <Card>
           <CardHeader>
             <CardTitle>Zones</CardTitle>
-            <CardDescription>
-              Placeholder names — the real zonal structure has not been supplied.
-            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <Table>

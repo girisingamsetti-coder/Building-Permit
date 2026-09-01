@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { requirePageCapability } from '@/server/auth/page-guard';
 import { CAPABILITIES } from '@/lib/constants';
-import { can, isLtp } from '@/server/auth/context';
+import { can } from '@/server/auth/context';
 import { listPayments } from '@/server/services/payments';
 import { serialize } from '@/server/http/serialize';
 import { PageHeader } from '@/components/common/page-header';
@@ -60,24 +60,18 @@ export default async function PaymentsPage({
     <>
       <PageHeader
         title="Payments"
-        description={
-          isLtp(user)
-            ? 'Every payment you have made, across all your applications.'
-            : 'Every payment taken across the applications in your remit, with its gateway record.'
-        }
         actions={
           can(user, CAPABILITIES.PAYMENT_RECONCILE) ? <ReconcileButtonSlot /> : undefined
         }
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <KpiCard label="Received" value={received} href="/payments?status=SUCCESS" tone="success" />
         <KpiCard
           label="Awaiting confirmation"
           value={inFlight}
           href="/payments?status=PROCESSING"
           tone={inFlight > 0 ? 'warning' : 'neutral'}
-          hint={inFlight > 0 ? 'Checked against the gateway automatically every few minutes.' : undefined}
         />
         <KpiCard
           label="Failed or timed out"

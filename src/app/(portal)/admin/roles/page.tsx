@@ -35,12 +35,9 @@ export default async function RolesPage() {
 
   return (
     <>
-      <PageHeader
-        title="Roles"
-        description="What each role may do. Enforced on the server on every request — the interface only decides what to show."
-      />
+      <PageHeader title="Roles & Permissions" />
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {roles.map((role) => {
           const byModule = new Map<string, string[]>();
           for (const { permission } of role.permissions) {

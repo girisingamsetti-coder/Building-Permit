@@ -33,18 +33,18 @@ export function Panel({
 }) {
   return (
     <Card className={className}>
-      <CardHeader className="flex flex-wrap items-start justify-between gap-2">
+      <CardHeader className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
         <div className="min-w-0">
-          <CardTitle>{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
+          <CardTitle className="text-small font-bold text-text">{title}</CardTitle>
+          {description && <CardDescription className="text-caption text-text-muted mt-0.5">{description}</CardDescription>}
         </div>
         {action && (
           <Link
             href={action.href}
-            className="flex shrink-0 items-center gap-1 rounded text-small text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex shrink-0 items-center gap-1 rounded text-caption font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             {action.label}
-            <ArrowRight className="size-3.5" />
+            <ArrowRight className="size-3" />
           </Link>
         )}
       </CardHeader>
@@ -55,17 +55,12 @@ export function Panel({
 
 /**
  * A group heading between rows of tiles.
- *
- * The brief for this screen asked for eleven headline numbers, which is more
- * than anybody reads at once. Grouping them under three or four quiet headings
- * turns a wall into a structure: a reader scans the headings, then the tiles
- * under the one they came for.
  */
 export function SectionHeading({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pt-1">
-      <h2 className="text-h2 text-text">{title}</h2>
-      {hint && <p className="text-small text-text-muted">{hint}</p>}
+    <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 pt-0.5">
+      <h2 className="text-small font-bold tracking-tight text-text uppercase text-text-muted">{title}</h2>
+      {hint && <p className="text-caption text-text-subtle">{hint}</p>}
     </div>
   );
 }

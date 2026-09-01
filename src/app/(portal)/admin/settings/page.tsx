@@ -148,10 +148,7 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Settings"
-        description="Business configuration. Values are editable and take effect immediately; structure — workflow, fee schedules, document rules — is shown as configured and is versioned rather than edited in place."
-      />
+      <PageHeader title="Platform Settings & Rules" />
 
       <Tabs defaultValue="values">
         <TabsList className="mb-4 flex-wrap">

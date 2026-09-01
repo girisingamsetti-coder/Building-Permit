@@ -10,17 +10,17 @@ export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="mb-5">
-          <h2 className="text-h1 text-text">Sign in</h2>
+    <Card className="rounded-2xl border-border/80 bg-surface/95 shadow-elevated backdrop-blur-sm">
+      <CardContent className="p-6 sm:p-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold tracking-tight text-text">Sign in to your portal</h2>
           <p className="mt-1 text-small text-text-muted">
-            Use the account issued to you by the department.
+            Access building permission cases, scrutiny tasks, and fee orders.
           </p>
         </div>
 
         {/* useSearchParams needs a Suspense boundary during prerender. */}
-        <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+        <Suspense fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
           <LoginForm demoMode={env.demoMode} demoPassword={env.demoPassword} />
         </Suspense>
       </CardContent>

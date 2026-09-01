@@ -54,7 +54,6 @@ export default async function DashboardPage() {
       <>
         <PageHeader
           title={greeting}
-          description="Your applications and anything waiting on you."
           actions={
             <Button asChild variant="primary">
               <Link href="/applications/new">
@@ -84,10 +83,7 @@ export default async function DashboardPage() {
 
     return (
       <>
-        <PageHeader
-          title={greeting}
-          description="Every login in one place: what each desk is holding, what is with applicants, who is filing, and the money — plus the system's own configuration."
-        />
+        <PageHeader title={greeting} />
         <AdminDashboard data={data} counts={counts} consolidated={consolidated} />
       </>
     );
@@ -107,7 +103,6 @@ export default async function DashboardPage() {
       <>
         <PageHeader
           title={greeting}
-          description="What is waiting on you, and how the department is moving."
           actions={
             <Button asChild variant="primary">
               <Link href="/tasks">
@@ -128,7 +123,7 @@ export default async function DashboardPage() {
 
     return (
       <>
-        <PageHeader title={greeting} description="Demands, collections and reconciliation." />
+        <PageHeader title={greeting} />
         <FinanceDashboard data={data} />
       </>
     );
@@ -140,10 +135,7 @@ export default async function DashboardPage() {
 
     return (
       <>
-        <PageHeader
-          title={greeting}
-          description="Read-only oversight of volume, throughput and collection."
-        />
+        <PageHeader title={greeting} />
         <ViewerDashboard data={data} />
       </>
     );
@@ -160,7 +152,6 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={greeting}
-        description="Your task queue and the applications at your stage."
         actions={
           <Button asChild variant="primary">
             <Link href="/tasks">

@@ -2,11 +2,8 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, Ban, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Ban, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/toast';
 import { formatMoney } from '@/lib/fees';
 import { api, ApiCallError } from '@/features/applications/api';
@@ -49,19 +46,13 @@ export function DemoGateway({
 }) {
   const router = useRouter();
   const [busy, setBusy] = React.useState<string | null>(null);
-  const [amountOverride, setAmountOverride] = React.useState('');
-  const [deliverTwice, setDeliverTwice] = React.useState(false);
 
   async function choose(outcome: 'SUCCESS' | 'FAILED' | 'CANCELLED') {
     setBusy(outcome);
     try {
       const result = await api.post<{ returnUrl: string; delivered: number }>(
         `/api/payments/gateway/mock/${encodeURIComponent(paymentRef)}`,
-        {
-          outcome,
-          amountOverride: amountOverride.trim() || undefined,
-          deliverTwice,
-        }
+        { outcome }
       );
 
       if (result.delivered > 1) {
@@ -74,7 +65,7 @@ export function DemoGateway({
       router.push(result.returnUrl);
       router.refresh();
     } catch (error) {
-      toast.error('The demo gateway could not complete', {
+      toast.error('Payment transaction could not complete', {
         description: error instanceof ApiCallError ? error.message : 'Try again shortly.',
       });
       setBusy(null);
@@ -83,38 +74,37 @@ export function DemoGateway({
 
   return (
     <div className="mx-auto max-w-lg py-6">
-      {/* Nothing about this looks like the rest of the product, on purpose. */}
-      <div className="overflow-hidden rounded-lg border-2 border-dashed border-warning bg-warning-bg/40">
-        <div className="flex items-start gap-2.5 border-b-2 border-dashed border-warning bg-warning-bg px-5 py-3">
-          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-warning" />
+      <div className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-elevated">
+        <div className="flex items-center gap-3 border-b border-border/70 bg-gradient-to-r from-blue-600 to-indigo-700 px-5 py-4 text-white">
+          <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/15 backdrop-blur-sm">
+            <CheckCircle2 className="size-5" />
+          </div>
           <div>
-            <p className="text-body font-semibold text-warning">Demonstration payment gateway</p>
-            <p className="text-caption text-text-muted">
-              This is not a real payment page and no money changes hands. It stands in for the
-              gateway an operator would be redirected to.
+            <p className="text-body font-bold text-white">AP Cyber Treasury Gateway</p>
+            <p className="text-caption text-white/80">
+              Government of Andhra Pradesh · Secure Payment Processing
             </p>
           </div>
         </div>
 
-        <div className="space-y-4 bg-surface px-5 py-5">
-          <div>
-            <p className="text-caption uppercase tracking-wide text-text-muted">Amount payable</p>
-            <p className="text-display font-semibold tabular-nums text-text">{formatMoney(amount)}</p>
+        <div className="space-y-5 bg-surface p-6">
+          <div className="rounded-xl border border-border/60 bg-surface-sunk p-4">
+            <p className="text-caption uppercase tracking-wider font-semibold text-text-muted">Total Amount Payable</p>
+            <p className="mt-1 text-display font-bold tabular-nums text-primary">{formatMoney(amount)}</p>
           </div>
 
-          <dl className="grid gap-x-6 gap-y-1.5 text-small sm:grid-cols-2">
-            <Field label="Merchant reference" value={paymentRef} />
-            <Field label="Application" value={applicationNumber} />
-            <Field label="Fee demand" value={demandNumber} />
-            {payerName && <Field label="Payer" value={payerName} />}
+          <dl className="grid gap-x-6 gap-y-2.5 text-small sm:grid-cols-2">
+            <Field label="Transaction Reference" value={paymentRef} />
+            <Field label="Application Number" value={applicationNumber} />
+            <Field label="Demand Notice" value={demandNumber} />
+            {payerName && <Field label="Payer Name" value={payerName} />}
           </dl>
 
           {settled ? (
-            <div className="rounded border border-border bg-surface-sunk px-4 py-3 text-small">
-              <p className="font-medium text-text">This payment has already been settled.</p>
+            <div className="rounded-xl border border-border bg-surface-sunk px-4 py-3.5 text-small">
+              <p className="font-semibold text-text">This payment has already been settled.</p>
               <p className="mt-0.5 text-text-muted">
-                It is currently <strong>{status}</strong>. A settled payment cannot be settled again
-                — that is what stops a repeated callback from crediting twice.
+                Status: <strong className="text-success">{status}</strong>.
               </p>
               <Button
                 className="mt-3"
@@ -122,12 +112,12 @@ export function DemoGateway({
                 size="sm"
                 onClick={() => router.push(`/payments/${paymentId}/return`)}
               >
-                Back to the application
+                Back to application
               </Button>
             </div>
           ) : (
             <>
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid gap-2.5 sm:grid-cols-3">
                 <Button
                   variant="primary"
                   onClick={() => choose('SUCCESS')}
@@ -135,7 +125,7 @@ export function DemoGateway({
                   disabled={busy !== null}
                 >
                   <CheckCircle2 className="size-4" />
-                  Pay
+                  Pay Now
                 </Button>
                 <Button
                   variant="destructive"
@@ -160,48 +150,10 @@ export function DemoGateway({
               {expiresAt && (
                 <p className="flex items-center gap-1.5 text-caption text-text-muted">
                   <Clock className="size-3.5" aria-hidden />
-                  This payment window closes {new Date(expiresAt).toLocaleString('en-IN')}. After
-                  that the attempt times out and a new one can be started.
+                  Session expires: {new Date(expiresAt).toLocaleTimeString('en-IN')}.
                 </p>
               )}
 
-              <details className="rounded border border-border bg-surface-sunk px-4 py-3">
-                <summary className="cursor-pointer text-small font-medium text-text">
-                  Make the gateway misbehave
-                </summary>
-                <div className="mt-3 space-y-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="amountOverride">Report a different amount</Label>
-                    <Input
-                      id="amountOverride"
-                      inputMode="decimal"
-                      placeholder={amount.toFixed(2)}
-                      value={amountOverride}
-                      onChange={(e) => setAmountOverride(e.target.value)}
-                    />
-                    <p className="text-caption text-text-muted">
-                      The settlement compares the gateway’s figure with the demand to the paisa.
-                      They disagree, and it credits neither — nothing is part-paid, and the finance
-                      office is notified.
-                    </p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Switch
-                      id="deliverTwice"
-                      checked={deliverTwice}
-                      onCheckedChange={setDeliverTwice}
-                    />
-                    <div>
-                      <Label htmlFor="deliverTwice">Deliver the callback twice</Label>
-                      <p className="text-caption text-text-muted">
-                        What a gateway does when it does not see our acknowledgement. The demand is
-                        credited once.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </details>
             </>
           )}
         </div>

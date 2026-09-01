@@ -1,5 +1,6 @@
 import 'server-only';
-import { ApplicationStatus, type Prisma, type ShortfallStatus, type SlaStatus } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
+import { ApplicationStatus, type ShortfallStatus, type SlaStatus } from '@/types/enums';
 import { prisma, type Tx } from '@/server/db/prisma';
 import { applicationScope } from '@/server/auth/scope';
 import { isLtp, type AuthUser } from '@/server/auth/context';

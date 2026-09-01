@@ -31,17 +31,10 @@ export default async function ShortfallsPage() {
   ]);
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title="Shortfalls"
-        description={
-          applicant
-            ? 'Everything the department has asked you for, across your applications.'
-            : 'Everything asked of applicants in your jurisdiction, and what has come back.'
-        }
-      />
+    <div className="space-y-3.5">
+      <PageHeader title="Shortfalls" />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Open" value={summary.open} icon={AlertTriangle} />
         <KpiCard
           label={applicant ? 'Waiting on you' : 'With the applicant'}
@@ -57,7 +50,6 @@ export default async function ShortfallsPage() {
           label="Overdue"
           value={summary.overdue}
           tone={summary.overdue ? 'danger' : 'neutral'}
-          hint="Past the date the applicant was given"
         />
       </div>
 

@@ -37,20 +37,30 @@ const config: Config = {
       borderRadius: {
         sm: 'var(--radius-sm)',
         DEFAULT: 'var(--radius)',
+        md: 'var(--radius-md)',
         lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+        full: '9999px',
+      },
+      boxShadow: {
+        subtle: '0 1px 2px 0 rgb(0 0 0 / 0.03)',
+        card: '0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.03)',
+        'card-hover': '0 8px 16px -2px rgb(0 0 0 / 0.06), 0 4px 6px -2px rgb(0 0 0 / 0.03)',
+        elevated: '0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
-        // The scale from K.3. Nothing outside it.
+        // The scale from K.3 with modern line heights
         caption: ['12px', { lineHeight: '1.4' }],
         small: ['13px', { lineHeight: '1.5' }],
         body: ['14px', { lineHeight: '1.55' }],
         h2: ['16px', { lineHeight: '1.4', fontWeight: '600' }],
         h1: ['20px', { lineHeight: '1.3', fontWeight: '600' }],
-        display: ['24px', { lineHeight: '1.2', fontWeight: '600' }],
+        display: ['24px', { lineHeight: '1.2', fontWeight: '700' }],
       },
     },
   },

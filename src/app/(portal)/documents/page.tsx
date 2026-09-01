@@ -74,16 +74,9 @@ export default async function DocumentsPage({
 
   return (
     <>
-      <PageHeader
-        title="Documents"
-        description={
-          isLtp(user)
-            ? 'Every document you have uploaded, across all your applications.'
-            : 'Every document uploaded across the applications in your remit.'
-        }
-      />
+      <PageHeader title="Documents" />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Documents" value={stats.total} href="/documents" />
         <KpiCard
           label={canVerify ? 'Awaiting your decision' : 'Awaiting a decision'}

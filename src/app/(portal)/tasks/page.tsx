@@ -32,13 +32,10 @@ export default async function TasksPage() {
   const [tasks, summary] = await Promise.all([listTasks(user, {}), taskSummary(user)]);
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title="Tasks"
-        description="Files waiting at the desks your role works at. Most urgent first, and among equals the one that has waited longest."
-      />
+    <div className="space-y-3.5">
+      <PageHeader title="Tasks" />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="At your desk" value={summary.total} icon={ListChecks} />
         <KpiCard label="Held by you" value={summary.mine} tone="info" />
         <KpiCard
@@ -50,9 +47,6 @@ export default async function TasksPage() {
           label="Overdue"
           value={summary.overdue}
           tone={summary.overdue ? 'danger' : 'neutral'}
-          // Passing the date has no legal effect in this system: it notifies
-          // and it reports, and nothing else. See docs/07-subsystems.md R.1.1.
-          hint="Reported, not enforced"
         />
       </div>
 

@@ -53,7 +53,6 @@ export default async function ApplicationsPage({
     <>
       <PageHeader
         title="Applications"
-        description="Every application you have filed, and the ones still in draft."
         actions={
           canCreate && (
             <Button asChild variant="primary">
@@ -66,7 +65,7 @@ export default async function ApplicationsPage({
         }
       />
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <ApplicationFilters meta={meta as ApplicationMeta} total={result.total} />
         <ApplicationsTable result={result as unknown as ListResult} showLtp={showLtp} />
       </div>

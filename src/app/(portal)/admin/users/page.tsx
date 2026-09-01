@@ -36,7 +36,7 @@ export default async function UsersPage({
     <>
       <PageHeader
         title="Users"
-        description={`${total} ${total === 1 ? 'account' : 'accounts'}. A role decides what an account may do; a zone decides what it may see.`}
+        description={`${total} ${total === 1 ? 'account' : 'accounts'}`}
         actions={
           <Button asChild variant="primary">
             <Link href="/admin/users/new">
