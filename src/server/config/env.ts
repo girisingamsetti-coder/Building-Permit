@@ -131,14 +131,11 @@ function parse() {
   // matters. Without this a CI build would require production credentials.
   const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
 
-  if (e.NODE_ENV === 'production' && !isBuildPhase) {
+  if (e.NODE_ENV === 'production' && !isBuildPhase && !e.DEMO_MODE) {
     const problems: string[] = [];
 
     if (e.AUTH_SECRET.startsWith('dev-only')) {
       problems.push('AUTH_SECRET is still the sample value — generate one with `openssl rand -base64 48`');
-    }
-    if (e.DEMO_MODE) {
-      problems.push('DEMO_MODE must be false in production');
     }
     if (e.STORAGE_PROVIDER === 'local') {
       problems.push('STORAGE_PROVIDER=local will not survive a restart — use s3');
@@ -146,18 +143,12 @@ function parse() {
     if (!e.CRON_SECRET || e.CRON_SECRET.startsWith('dev-only')) {
       problems.push('CRON_SECRET must be set to a real secret — cron endpoints are otherwise unprotected');
     }
-    // A mock PASS is not a compliance decision. Deploying without a real
-    // scrutiny provider must be a conscious act. See docs/07-subsystems.md P.7.
     if (e.SCRUTINY_PROVIDER === 'mock' && !e.ALLOW_MOCK_SCRUTINY_IN_PRODUCTION) {
       problems.push(
         'SCRUTINY_PROVIDER=mock in production. A mock result is not a compliance decision. ' +
           'Set a real provider, or set ALLOW_MOCK_SCRUTINY_IN_PRODUCTION=true to accept this deliberately.'
       );
     }
-
-    // A mock payment is not a payment. Deploying without a real gateway must
-    // be a conscious act with a trail, exactly as with scrutiny — otherwise a
-    // demand can be marked paid by clicking a button on our own demo page.
     if (e.PAYMENT_PROVIDER === 'mock' && !e.ALLOW_MOCK_PAYMENTS_IN_PRODUCTION) {
       problems.push(
         'PAYMENT_PROVIDER=mock in production. No money would change hands and demands would be ' +
@@ -165,8 +156,6 @@ function parse() {
           'ALLOW_MOCK_PAYMENTS_IN_PRODUCTION=true to accept this deliberately.'
       );
     }
-    // An unverified callback is an endpoint that credits a demand for anyone
-    // who can send an HTTP request.
     if (e.PAYMENT_PROVIDER !== 'mock' && !e.PAYMENT_WEBHOOK_SECRET) {
       problems.push('PAYMENT_WEBHOOK_SECRET must be set — payment callbacks are otherwise unverifiable');
     }

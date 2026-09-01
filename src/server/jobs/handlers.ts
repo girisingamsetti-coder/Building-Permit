@@ -84,28 +84,26 @@ register(JOB_TYPES.VERIFY_AUDIT_CHAIN, async () => {
 // to know rather than to rely on the guard alone.
 
 register(JOB_TYPES.RECOUNT_SHORTFALLS, async () => {
-  const divergent = await prisma.$queryRaw<Array<{ id: string; cached: number; actual: bigint }>>`
-    SELECT a.id,
-           a."openShortfalls" AS cached,
-           COUNT(s.id) FILTER (
-             WHERE s.status NOT IN ('RESOLVED','CANCELLED')
-           ) AS actual
-    FROM applications a
-    LEFT JOIN shortfalls s ON s."applicationId" = a.id
-    WHERE a."deletedAt" IS NULL
-    GROUP BY a.id, a."openShortfalls"
-    HAVING a."openShortfalls" <> COUNT(s.id) FILTER (
-      WHERE s.status NOT IN ('RESOLVED','CANCELLED')
-    );
-  `;
+  const apps = await prisma.application.findMany({
+    where: { deletedAt: null },
+    select: { id: true, openShortfalls: true },
+  });
 
-  for (const row of divergent) {
-    const actual = Number(row.actual);
-    console.warn(`[shortfalls] recount ${row.id}: cached=${row.cached} actual=${actual}`);
-    await prisma.application.update({
-      where: { id: row.id },
-      data: { openShortfalls: actual },
+  for (const app of apps) {
+    const actual = await prisma.shortfall.count({
+      where: {
+        applicationId: app.id,
+        status: { notIn: ['RESOLVED', 'CANCELLED'] },
+      },
     });
+
+    if (app.openShortfalls !== actual) {
+      console.warn(`[shortfalls] recount ${app.id}: cached=${app.openShortfalls} actual=${actual}`);
+      await prisma.application.update({
+        where: { id: app.id },
+        data: { openShortfalls: actual },
+      });
+    }
   }
 });
 

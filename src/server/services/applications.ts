@@ -533,7 +533,8 @@ export async function saveStep(user: AuthUser, id: string, input: SaveStepInput,
   const parsed = STEP_SCHEMAS[stepKey].parse(input.data) as Record<string, unknown>;
 
   const before = STEP_MAPPERS[stepKey].read(app);
-  const firstCompletion = !(app.draft?.completedSteps ?? []).includes(stepKey);
+  const completed = Array.isArray(app.draft?.completedSteps) ? (app.draft.completedSteps as string[]) : [];
+  const firstCompletion = !completed.includes(stepKey);
 
   await prisma.$transaction(async (tx) => {
     if (stepKey === 'ltp') {
@@ -560,7 +561,7 @@ export async function saveStep(user: AuthUser, id: string, input: SaveStepInput,
       },
       update: {
         currentStep: Math.min(targetIndex + 1, WIZARD_STEPS.length - 1),
-        completedSteps: unique([...(app.draft?.completedSteps ?? []), stepKey]),
+        completedSteps: unique([...completed, stepKey]),
         scratch: scratch as never,
       },
     });
@@ -963,12 +964,12 @@ function buildListWhere(user: AuthUser, query: ApplicationListQuery): Prisma.App
     const q = query.q;
     and.push({
       OR: [
-        { applicationNumber: { contains: q, mode: 'insensitive' } },
-        { applicant: { name: { contains: q, mode: 'insensitive' } } },
+        { applicationNumber: { contains: q } },
+        { applicant: { name: { contains: q } } },
         { applicant: { phone: { contains: q } } },
-        { property: { surveyNumbers: { contains: q, mode: 'insensitive' } } },
-        { property: { localityName: { contains: q, mode: 'insensitive' } } },
-        { property: { plotNo: { contains: q, mode: 'insensitive' } } },
+        { property: { surveyNumbers: { contains: q } } },
+        { property: { localityName: { contains: q } } },
+        { property: { plotNo: { contains: q } } },
       ],
     });
   }

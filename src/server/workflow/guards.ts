@@ -121,7 +121,7 @@ const REGISTRY: Record<string, Guard> = {
 
     if (!outstanding.length) return ok;
 
-    const due = outstanding.reduce((sum, d) => sum + d.totalAmount.minus(d.paidAmount).toNumber(), 0);
+    const due = outstanding.reduce((sum, d) => sum + (Number(d.totalAmount) - Number(d.paidAmount)), 0);
     return no(
       `${outstanding.length} ${outstanding.length === 1 ? 'demand is' : 'demands are'} unpaid — ` +
         `${due.toFixed(2)} outstanding.`

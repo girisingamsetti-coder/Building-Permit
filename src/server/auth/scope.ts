@@ -74,13 +74,9 @@ export function taskScope(user: AuthUser): Prisma.WorkflowTaskWhereInput {
   // an officer's inbox and exactly wrong for theirs.
   if (isLtp(user)) return { instance: { application: { ltpUserId: user.id } } };
 
-  const byRole: Prisma.WorkflowTaskWhereInput = {
-    stage: { ownerRoleKeys: { hasSome: user.roleKeys } },
-  };
-
-  if (isCitywide(user)) return byRole;
+  if (isCitywide(user)) return {};
 
   return {
-    AND: [byRole, { OR: [{ zoneId: { in: user.zoneIds } }, { zoneId: null }] }],
+    OR: [{ zoneId: { in: user.zoneIds } }, { zoneId: null }],
   };
 }

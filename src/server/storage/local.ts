@@ -22,8 +22,8 @@ export class LocalStorageProvider implements StorageProvider {
 
   private readonly root: string;
 
-  constructor(rootDir: string = env.storageLocalDir) {
-    this.root = resolve(process.cwd(), rootDir);
+  constructor(rootDir: string = (process.env.VERCEL ? '/tmp/.storage' : env.storageLocalDir)) {
+    this.root = process.env.VERCEL ? '/tmp/.storage' : resolve(process.cwd(), rootDir);
   }
 
   /**

@@ -1,6 +1,6 @@
 import 'server-only';
 import type { Prisma } from '@prisma/client';
-import { prisma, Prisma as P, type Db, type Tx } from '@/server/db/prisma';
+import { prisma, type Db, type Tx } from '@/server/db/prisma';
 import { applicationScope } from '@/server/auth/scope';
 import { can, type AuthUser } from '@/server/auth/context';
 import { env } from '@/server/config/env';
@@ -245,13 +245,13 @@ export async function initiatePayment(
   const demand = await requireDemand(user, demandId);
   const app = demand.application;
 
-  const balance = demand.totalAmount.minus(demand.paidAmount);
+  const balance = Number(demand.totalAmount) - Number(demand.paidAmount);
 
   const blocked = whyCannotPay({
     applicationStatus: app.status,
     demandStatus: demand.status,
     demandType: demand.type,
-    balance: balance.toNumber(),
+    balance,
   });
   if (blocked) throw guardFailed(blocked);
 
@@ -294,12 +294,12 @@ export async function initiatePayment(
 
     if (!fresh) throw notFound('That demand could not be found.');
 
-    const due = fresh.totalAmount.minus(fresh.paidAmount);
+    const due = Number(fresh.totalAmount) - Number(fresh.paidAmount);
     const stillBlocked = whyCannotPay({
       applicationStatus: app.status,
       demandStatus: fresh.status,
       demandType: demand.type,
-      balance: due.toNumber(),
+      balance: due,
     });
     if (stillBlocked) throw guardFailed(stillBlocked);
 
@@ -567,12 +567,7 @@ async function applyVerification(
   return prisma.$transaction(async (tx) => {
     // ── The lock ──────────────────────────────────────────────────────
     //
-    // `FOR UPDATE` on the payment row. Every other settlement of this payment
-    // blocks here until this transaction commits, and then re-reads and finds
-    // `settlementLockAt` set. This is what makes concurrent delivery of a
-    // webhook and a return safe rather than merely unlikely.
-    await tx.$queryRaw`SELECT id FROM payments WHERE id = ${paymentId}::uuid FOR UPDATE`;
-
+    // On SQLite, write transactions are serialized automatically.
     const payment = await tx.payment.findUniqueOrThrow({
       where: { id: paymentId },
       select: {
@@ -801,7 +796,7 @@ async function settleSuccess(
   now: Date,
   isDemo: boolean
 ): Promise<SettlementOutcome> {
-  const expected = payment.amount.toNumber();
+  const expected = Number(payment.amount);
   const reported = status.amount === null || status.amount === undefined ? null : Number(status.amount);
 
   if (reported === null || !Number.isFinite(reported) || !amountsAgree(expected, reported)) {
@@ -845,7 +840,7 @@ async function settleSuccess(
     select: { totalAmount: true, paidAmount: true },
   });
 
-  const fullyPaid = credited.paidAmount.gte(credited.totalAmount);
+  const fullyPaid = Number(credited.paidAmount) >= Number(credited.totalAmount);
 
   await tx.applicationFee.update({
     where: { id: payment.applicationFeeId },
@@ -1376,32 +1371,23 @@ export async function handleWebhook(providerName: string, req: Request) {
   // table that records what the gateway said.
   const event = await provider.parseWebhook(req);
 
-  // `createMany` with `skipDuplicates` rather than `create` in a try/catch:
-  // both are ON CONFLICT DO NOTHING at the database, but the exception form
-  // makes Prisma log a constraint violation at error level — and a gateway
-  // retrying a delivery five times is ordinary traffic, not five errors. An
-  // operator who learns to ignore this line will ignore the next one too.
-  const inserted = await prisma.paymentWebhookEvent.createMany({
-    data: [
-      {
-        provider: providerName,
-        externalId: event.externalId,
-        eventType: event.eventType.slice(0, 120),
-        paymentRef: event.paymentRef.slice(0, 120),
-        signatureOk: true,
-        payload: event.payload as never,
-      },
-    ],
-    skipDuplicates: true,
+  const existingEvent = await prisma.paymentWebhookEvent.findUnique({
+    where: { provider_externalId: { provider: providerName, externalId: event.externalId } },
   });
 
-  // Nothing inserted: we have seen this delivery. 200, and no money touched.
-  if (inserted.count === 0) {
+  if (existingEvent) {
     return { received: true, duplicate: true, settled: false, status: null as string | null };
   }
 
-  const recorded = await prisma.paymentWebhookEvent.findUniqueOrThrow({
-    where: { provider_externalId: { provider: providerName, externalId: event.externalId } },
+  const recorded = await prisma.paymentWebhookEvent.create({
+    data: {
+      provider: providerName,
+      externalId: event.externalId,
+      eventType: event.eventType.slice(0, 120),
+      paymentRef: event.paymentRef.slice(0, 120),
+      signatureOk: true,
+      payload: event.payload as never,
+    },
     select: { id: true },
   });
 
@@ -1484,8 +1470,6 @@ export async function cancelPayment(user: AuthUser, paymentId: string, meta: Met
   const now = new Date();
 
   const outcome = await prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM payments WHERE id = ${payment.id}::uuid FOR UPDATE`;
-
     const fresh = await tx.payment.findUniqueOrThrow({
       where: { id: payment.id },
       select: {
@@ -1687,7 +1671,7 @@ const shapeDemand = (
   demand: Prisma.ApplicationFeeGetPayload<{ select: typeof DEMAND_SELECT }>,
   applicationStatus: string
 ) => {
-  const balance = demand.totalAmount.minus(demand.paidAmount);
+  const balance = Number(demand.totalAmount) - Number(demand.paidAmount);
 
   return {
     id: demand.id,
@@ -1708,7 +1692,7 @@ const shapeDemand = (
       applicationStatus,
       demandStatus: demand.status,
       demandType: demand.type,
-      balance: balance.toNumber(),
+      balance,
     }),
   };
 };
@@ -1747,8 +1731,8 @@ export async function getPayments(user: AuthUser, applicationId: string) {
 
   const provider = currentProvider();
 
-  const totalDemanded = demands.reduce((sum, d) => sum.plus(d.totalAmount), zero());
-  const totalPaid = demands.reduce((sum, d) => sum.plus(d.paidAmount), zero());
+  const totalDemanded = demands.reduce((sum, d) => sum + Number(d.totalAmount), 0);
+  const totalPaid = demands.reduce((sum, d) => sum + Number(d.paidAmount), 0);
 
   const mayInitiate = can(user, CAPABILITIES.PAYMENT_INITIATE);
   const payable = demands
@@ -1766,7 +1750,7 @@ export async function getPayments(user: AuthUser, applicationId: string) {
     summary: {
       totalDemanded,
       totalPaid,
-      balance: totalDemanded.minus(totalPaid),
+      balance: totalDemanded - totalPaid,
     },
     gateway: {
       name: provider.name,
@@ -1810,11 +1794,11 @@ export async function listPayments(
     ...(search
       ? {
           OR: [
-            { paymentRef: { contains: search, mode: 'insensitive' } },
-            { gatewayTxnId: { contains: search, mode: 'insensitive' } },
-            { application: { applicationNumber: { contains: search, mode: 'insensitive' } } },
-            { fee: { demandNumber: { contains: search, mode: 'insensitive' } } },
-            { receipt: { receiptNumber: { contains: search, mode: 'insensitive' } } },
+            { paymentRef: { contains: search } },
+            { gatewayTxnId: { contains: search } },
+            { application: { applicationNumber: { contains: search } } },
+            { fee: { demandNumber: { contains: search } } },
+            { receipt: { receiptNumber: { contains: search } } },
           ],
         }
       : {}),
@@ -1879,7 +1863,7 @@ async function recordTransaction(
     gatewayTxnId?: string;
     bankRef?: string;
     method?: string;
-    amount?: Prisma.Decimal | string | null;
+    amount?: Prisma.Decimal | string | number | null;
     payload?: unknown;
   }
 ) {
@@ -1892,14 +1876,12 @@ async function recordTransaction(
       gatewayTxnId: input.gatewayTxnId ?? null,
       bankRef: (input.bankRef ?? '').slice(0, 120),
       method: (input.method ?? '').slice(0, 40),
-      amount: input.amount ?? null,
+      amount: input.amount === null || input.amount === undefined ? null : Number(input.amount),
       message: (input.message ?? '').slice(0, 1000),
       rawPayload: (input.payload ?? {}) as never,
     },
   });
 }
-
-const zero = () => new P.Decimal(0);
 
 /** Guard used by the routes that must not run for a role without PAYMENT_VIEW. */
 export function assertCanSeePayments(user: AuthUser) {

@@ -127,7 +127,7 @@ async function main() {
   // from the instance, the register and the workflow tab disagree about where
   // a file is — and the register is what an officer looks at first.
   const drifted = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(*)::bigint AS n
+    SELECT COUNT(*) AS n
       FROM applications a
       JOIN workflow_instances i ON i."applicationId" = a.id
       LEFT JOIN workflow_stages s ON s.id = i."currentStageId"
@@ -141,7 +141,7 @@ async function main() {
   );
 
   const multiInstance = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(*)::bigint AS n FROM (
+    SELECT COUNT(*) AS n FROM (
       SELECT "applicationId" FROM workflow_instances
        GROUP BY "applicationId" HAVING COUNT(*) > 1
     ) d
@@ -152,7 +152,7 @@ async function main() {
   );
 
   const multiOpenTask = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(*)::bigint AS n FROM (
+    SELECT COUNT(*) AS n FROM (
       SELECT "instanceId" FROM workflow_tasks
        WHERE status IN ('PENDING', 'IN_PROGRESS')
        GROUP BY "instanceId" HAVING COUNT(*) > 1
@@ -189,7 +189,7 @@ async function main() {
   );
 
   const approvedUnpaid = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(DISTINCT a.id)::bigint AS n
+    SELECT COUNT(DISTINCT a.id) AS n
       FROM applications a
       JOIN application_fees f ON f."applicationId" = a.id
      WHERE a."deletedAt" IS NULL
@@ -233,7 +233,7 @@ async function main() {
   check('every settled payment has a receipt', noReceipt === 0, `${noReceipt} without one`);
 
   const orphanPayments = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(*)::bigint AS n
+    SELECT COUNT(*) AS n
       FROM payments p
       JOIN application_fees f ON f.id = p."applicationFeeId"
      WHERE p."applicationId" <> f."applicationId"
@@ -261,13 +261,13 @@ async function main() {
   );
 
   const overpaid = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(*)::bigint AS n FROM application_fees
+    SELECT COUNT(*) AS n FROM application_fees
      WHERE "paidAmount" > "totalAmount"
   `;
   check('no demand is paid beyond its total', Number(overpaid[0]?.n ?? 0) === 0);
 
   const paidNotSettled = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(*)::bigint AS n
+    SELECT COUNT(*) AS n
       FROM application_fees f
      WHERE f.status = 'PAID'
        AND NOT EXISTS (
@@ -281,7 +281,7 @@ async function main() {
   );
 
   const multiOpenPayment = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(*)::bigint AS n FROM (
+    SELECT COUNT(*) AS n FROM (
       SELECT "applicationFeeId" FROM payments
        WHERE status IN ('INITIATED', 'PENDING', 'PROCESSING')
        GROUP BY "applicationFeeId" HAVING COUNT(*) > 1
@@ -308,7 +308,7 @@ async function main() {
   // re-counts live and does not trust it — but if it has drifted, every list
   // that shows a shortfall badge is lying.
   const counterDrift = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(*)::bigint AS n FROM (
+    SELECT COUNT(*) AS n FROM (
       SELECT a.id
         FROM applications a
         LEFT JOIN shortfalls s
@@ -472,7 +472,7 @@ async function main() {
   console.log('\nChronology');
 
   const backwards = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(*)::bigint AS n FROM applications
+    SELECT COUNT(*) AS n FROM applications
      WHERE "deletedAt" IS NULL
        AND (
          ("submittedAt" IS NOT NULL AND "submittedAt" < "createdAt")
@@ -487,10 +487,10 @@ async function main() {
   );
 
   const eventsBeforeApplication = await prisma.$queryRaw<Array<{ n: bigint }>>`
-    SELECT COUNT(*)::bigint AS n
+    SELECT COUNT(*) AS n
       FROM application_events e
       JOIN applications a ON a.id = e."applicationId"
-     WHERE e."occurredAt" < a."createdAt" - INTERVAL '1 second'
+     WHERE e."occurredAt" < datetime(a."createdAt", '-1 second')
   `;
   check(
     'no timeline entry predates its application',

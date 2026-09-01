@@ -228,6 +228,8 @@ export async function resolveStructure(
   return candidates.find((c) => c.applicationTypeId === applicationTypeId) ?? candidates[0]!;
 }
 
+const toNum = (v: any) => (v === null || v === undefined ? null : Number(v));
+
 /** Prisma row → the calculator's plain input. Decimals become numbers here. */
 function toSpec(structure: StructureRow): StructureSpec {
   return {
@@ -242,21 +244,21 @@ function toSpec(structure: StructureRow): StructureSpec {
       code: c.code,
       name: c.name,
       headOfAccount: c.headOfAccount,
-      basis: c.basis,
-      rate: c.rate === null ? null : c.rate.toNumber(),
+      basis: c.basis as any,
+      rate: toNum(c.rate),
       variable: c.variable,
       percentOfCode: c.percentOfCode,
       expression: c.expression,
-      minAmount: c.minAmount === null ? null : c.minAmount.toNumber(),
-      maxAmount: c.maxAmount === null ? null : c.maxAmount.toNumber(),
+      minAmount: toNum(c.minAmount),
+      maxAmount: toNum(c.maxAmount),
       condition: c.condition,
       displayOrder: c.displayOrder,
       isActive: c.isActive,
       slabs: c.slabs.map((s) => ({
-        fromValue: s.fromValue.toNumber(),
-        toValue: s.toValue === null ? null : s.toValue.toNumber(),
-        rate: s.rate.toNumber(),
-        flatAmount: s.flatAmount === null ? null : s.flatAmount.toNumber(),
+        fromValue: Number(s.fromValue),
+        toValue: toNum(s.toValue),
+        rate: Number(s.rate),
+        flatAmount: toNum(s.flatAmount),
         displayOrder: s.displayOrder,
       })),
     })),
@@ -264,12 +266,12 @@ function toSpec(structure: StructureRow): StructureSpec {
       id: r.id,
       code: r.code,
       name: r.name,
-      kind: r.kind,
+      kind: r.kind as any,
       basis: r.basis as 'FLAT' | 'PERCENTAGE',
-      rate: r.rate === null ? null : r.rate.toNumber(),
+      rate: toNum(r.rate),
       appliesToCode: r.appliesToCode,
-      minAmount: r.minAmount === null ? null : r.minAmount.toNumber(),
-      maxAmount: r.maxAmount === null ? null : r.maxAmount.toNumber(),
+      minAmount: toNum(r.minAmount),
+      maxAmount: toNum(r.maxAmount),
       condition: r.condition,
       reason: r.reason,
       displayOrder: r.displayOrder,
@@ -422,21 +424,21 @@ export async function generateFee(user: AuthUser, applicationId: string, meta: M
         feeStructureCode: structure.code,
         roundingRule: calculation.structure.roundingRule,
         calculationInputs: context as never,
-        subtotal: calculation.subtotal,
-        adjustmentTotal: calculation.adjustmentTotal,
-        totalAmount: calculation.total,
+        subtotal: Number(calculation.subtotal),
+        adjustmentTotal: Number(calculation.adjustmentTotal),
+        totalAmount: Number(calculation.total),
         generatedById: user.id,
         issuedAt: now,
         dueDate: dueDays > 0 ? new Date(now.getTime() + dueDays * 86_400_000) : null,
         lineItems: {
-          create: [...calculation.lines, ...calculation.adjustments].map((line) => ({
-            kind: line.kind,
+          create: ([...calculation.lines, ...calculation.adjustments].map((line) => ({
+            kind: line.kind as any,
             feeComponentId: line.componentId,
             feeRuleId: line.ruleId,
             componentCode: line.code,
             componentName: line.name,
             headOfAccount: line.headOfAccount,
-            basis: line.basis,
+            basis: line.basis as any,
             variableName: line.variableName,
             variableValue: line.variableValue,
             rateApplied: line.rateApplied,
@@ -444,7 +446,7 @@ export async function generateFee(user: AuthUser, applicationId: string, meta: M
             amount: line.amount,
             calculationNote: line.note,
             displayOrder: line.displayOrder,
-          })),
+          })) as any),
         },
       },
       select: DEMAND_SELECT,
@@ -505,7 +507,7 @@ export async function generateFee(user: AuthUser, applicationId: string, meta: M
       },
     });
 
-    return shapeDemand(demand);
+    return shapeDemand(demand as unknown as DemandRow);
   });
 }
 
@@ -705,7 +707,7 @@ export async function cancelDemand(
   if (!isLiveDemand(demand.status)) {
     throw businessRule(`That demand is already ${demand.status.toLowerCase()}.`);
   }
-  if (!demand.paidAmount.isZero()) {
+  if (Number(demand.paidAmount) !== 0) {
     throw businessRule(
       'Money has been paid against this demand, so it cannot be cancelled. A refund is required instead.'
     );
@@ -804,7 +806,7 @@ const shapeDemand = (demand: DemandRow) => ({
   /** Charges and adjustments, split for the two halves of the demand table. */
   charges: demand.lineItems.filter((l) => l.kind === 'COMPONENT'),
   adjustments: demand.lineItems.filter((l) => l.kind !== 'COMPONENT'),
-  balance: demand.totalAmount.minus(demand.paidAmount),
+  balance: Number(demand.totalAmount) - Number(demand.paidAmount),
 });
 
 /**

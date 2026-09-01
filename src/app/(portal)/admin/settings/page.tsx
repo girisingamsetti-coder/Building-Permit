@@ -268,9 +268,9 @@ export default async function SettingsPage() {
                           </TableCell>
                           <TableCell className="text-caption text-text-muted">{stage.type}</TableCell>
                           <TableCell>
-                            {stage.ownerRoleKeys.length ? (
+                            {Array.isArray(stage.ownerRoleKeys) && stage.ownerRoleKeys.length ? (
                               <div className="flex flex-wrap gap-1">
-                                {stage.ownerRoleKeys.map((role) => (
+                                {(stage.ownerRoleKeys as string[]).map((role) => (
                                   <Badge key={role} tone="outline">
                                     {role}
                                   </Badge>

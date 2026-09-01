@@ -174,8 +174,8 @@ export async function listTasks(user: AuthUser, query: TaskListQuery = {}) {
               instance: {
                 application: {
                   OR: [
-                    { applicationNumber: { contains: query.q, mode: 'insensitive' as const } },
-                    { applicant: { name: { contains: query.q, mode: 'insensitive' as const } } },
+                    { applicationNumber: { contains: query.q } },
+                    { applicant: { name: { contains: query.q } } },
                   ],
                 },
               },
@@ -313,7 +313,8 @@ async function requireTask(user: AuthUser, taskId: string) {
 export async function claimTask(user: AuthUser, taskId: string, meta: Meta) {
   const task = await requireTask(user, taskId);
 
-  if (!task.stage.ownerRoleKeys.some((role) => user.roleKeys.includes(role as never))) {
+  const ownerRoles = Array.isArray(task.stage.ownerRoleKeys) ? (task.stage.ownerRoleKeys as string[]) : [];
+  if (!ownerRoles.some((role) => user.roleKeys.includes(role as never))) {
     throw forbidden(`${task.stage.name} is not one of your desks.`);
   }
 
@@ -402,12 +403,13 @@ export async function reassignTask(
     throw conflict(`Files at ${task.stage.name} cannot be reassigned.`);
   }
 
+  const targetRoles = Array.isArray(task.stage.ownerRoleKeys) ? (task.stage.ownerRoleKeys as string[]) : [];
   const target = await prisma.user.findFirst({
     where: {
       id: input.userId,
       status: 'ACTIVE',
       deletedAt: null,
-      roles: { some: { role: { key: { in: task.stage.ownerRoleKeys } } } },
+      roles: { some: { role: { key: { in: targetRoles } } } },
     },
     select: { id: true, name: true, roles: { select: { role: { select: { key: true } } } } },
   });
@@ -418,7 +420,7 @@ export async function reassignTask(
 
   const now = new Date();
   const roleKey =
-    target.roles.map((r) => r.role.key).find((key) => task.stage.ownerRoleKeys.includes(key)) ??
+    target.roles.map((r) => r.role.key).find((key) => targetRoles.includes(key)) ??
     task.assignedRoleKey;
 
   const moved = await prisma.workflowTask.updateMany({
@@ -472,11 +474,12 @@ export async function reassignTask(
 export async function reassignCandidates(user: AuthUser, taskId: string) {
   const task = await requireTask(user, taskId);
 
+  const candidateRoles = Array.isArray(task.stage.ownerRoleKeys) ? (task.stage.ownerRoleKeys as string[]) : [];
   const users = await prisma.user.findMany({
     where: {
       status: 'ACTIVE',
       deletedAt: null,
-      roles: { some: { role: { key: { in: task.stage.ownerRoleKeys } } } },
+      roles: { some: { role: { key: { in: candidateRoles } } } },
     },
     orderBy: { name: 'asc' },
     select: {

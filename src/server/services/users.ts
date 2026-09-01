@@ -56,9 +56,9 @@ export async function listUsers(query: UserListQuery) {
 
   if (query.q) {
     where.OR = [
-      { name: { contains: query.q, mode: 'insensitive' } },
-      { email: { contains: query.q, mode: 'insensitive' } },
-      { employeeCode: { contains: query.q, mode: 'insensitive' } },
+      { name: { contains: query.q } },
+      { email: { contains: query.q } },
+      { employeeCode: { contains: query.q } },
     ];
   }
   if (query.status) where.status = query.status;
@@ -243,7 +243,6 @@ export async function updateUser(id: string, input: UpdateUserInput, actor: Auth
       if (input.zoneIds.length) {
         await tx.userJurisdiction.createMany({
           data: input.zoneIds.map((zoneId) => ({ userId: id, zoneId })),
-          skipDuplicates: true,
         });
       }
     }

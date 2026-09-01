@@ -69,23 +69,36 @@ export async function enqueue(db: Db, input: EnqueueInput) {
  * the same row: SKIP LOCKED makes the second one see the next job instead.
  */
 export async function claimNext(workerId: string): Promise<ClaimedJob | null> {
-  const rows = await prisma.$queryRaw<ClaimedJob[]>`
-    UPDATE jobs
-    SET status = 'RUNNING',
-        "lockedAt" = NOW(),
-        "lockedBy" = ${workerId},
-        attempts = attempts + 1
-    WHERE id = (
-      SELECT id FROM jobs
-      WHERE status = 'PENDING' AND "runAt" <= NOW()
-      ORDER BY "runAt" ASC
-      LIMIT 1
-      FOR UPDATE SKIP LOCKED
-    )
-    RETURNING id, type, payload, attempts, "maxAttempts";
-  `;
+  return prisma.$transaction(async (tx) => {
+    const job = await tx.job.findFirst({
+      where: {
+        status: 'PENDING',
+        runAt: { lte: new Date() },
+      },
+      orderBy: { runAt: 'asc' },
+    });
 
-  return rows[0] ?? null;
+    if (!job) return null;
+
+    const updated = await tx.job.update({
+      where: { id: job.id },
+      data: {
+        status: 'RUNNING',
+        lockedAt: new Date(),
+        lockedBy: workerId,
+        attempts: { increment: 1 },
+      },
+      select: {
+        id: true,
+        type: true,
+        payload: true,
+        attempts: true,
+        maxAttempts: true,
+      },
+    });
+
+    return updated as unknown as ClaimedJob;
+  });
 }
 
 export type ClaimedJob = {

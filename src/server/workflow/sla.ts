@@ -123,7 +123,7 @@ export async function resolveSlaRule(
     return {
       ruleId: rule.id,
       days: rule.days,
-      calendar: rule.calendar,
+      calendar: rule.calendar as 'CALENDAR_DAYS' | 'WORKING_DAYS',
       warnAtPercent: rule.warnAtPercent,
       pauseOnShortfall: rule.pauseOnShortfall,
     };

@@ -107,7 +107,6 @@ export async function seedRbac(prisma: PrismaClient) {
     if (toAdd.length) {
       await prisma.rolePermission.createMany({
         data: toAdd.map((permissionId) => ({ roleId: role.id, permissionId })),
-        skipDuplicates: true,
       });
       granted += toAdd.length;
     }

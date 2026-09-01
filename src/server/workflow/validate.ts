@@ -187,8 +187,11 @@ export async function validateWorkflow(db: Db, workflowId: string): Promise<Vali
     const from = byId.get(t.fromStageId);
     if (!from) continue;
 
-    for (const role of t.allowedRoleKeys) {
-      if (!from.ownerRoleKeys.includes(role)) {
+    const tAllowed = Array.isArray(t.allowedRoleKeys) ? (t.allowedRoleKeys as string[]) : [];
+    const fromOwners = Array.isArray(from.ownerRoleKeys) ? (from.ownerRoleKeys as string[]) : [];
+
+    for (const role of tAllowed) {
+      if (!fromOwners.includes(role)) {
         error(
           'role-subset',
           `${t.action.code} out of ${from.code} is granted to ${role}, which does not own that stage.`
@@ -196,7 +199,7 @@ export async function validateWorkflow(db: Db, workflowId: string): Promise<Vali
       }
     }
 
-    if (!t.allowedRoleKeys.length && !from.ownerRoleKeys.length && t.action.kind !== 'SYSTEM') {
+    if (!tAllowed.length && !fromOwners.length && t.action.kind !== 'SYSTEM') {
       error(
         'no-actor',
         `${t.action.code} out of ${from.code} names no roles, and the stage has no owner either — nobody could perform it.`
@@ -250,7 +253,8 @@ export async function validateWorkflow(db: Db, workflowId: string): Promise<Vali
   for (const rule of assignments) {
     const stage = byId.get(rule.stageId);
     if (!stage) continue;
-    if (!stage.ownerRoleKeys.includes(rule.roleKey)) {
+    const stageOwners = Array.isArray(stage.ownerRoleKeys) ? (stage.ownerRoleKeys as string[]) : [];
+    if (!stageOwners.includes(rule.roleKey)) {
       error(
         'assignment-role',
         `An assignment rule routes ${stage.code} to ${rule.roleKey}, which does not own that stage.`
@@ -264,7 +268,8 @@ export async function validateWorkflow(db: Db, workflowId: string): Promise<Vali
   // ── 11. Every reachable non-terminal stage can route its work ──────────
   for (const stage of stages) {
     if (!stage.isActive || stage.isTerminal || !reachable.has(stage.id)) continue;
-    if (!stage.ownerRoleKeys.length) {
+    const stageOwners = Array.isArray(stage.ownerRoleKeys) ? (stage.ownerRoleKeys as string[]) : [];
+    if (!stageOwners.length) {
       error('no-owner', `${stage.code} has no owner role, so a task arriving there could not be addressed.`);
     }
   }

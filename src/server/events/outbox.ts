@@ -80,16 +80,18 @@ export async function emit(db: Db, input: EmitInput) {
  * concurrently without any of them handling the same row.
  */
 export async function claimPending(batchSize = 25) {
-  return prisma.$queryRaw<
-    Array<{ id: string; eventCode: string; applicationId: string | null; payload: unknown; attempts: number }>
-  >`
-    SELECT id, "eventCode", "applicationId", payload, attempts
-    FROM outbox_events
-    WHERE processed = false
-    ORDER BY "createdAt" ASC
-    LIMIT ${batchSize}
-    FOR UPDATE SKIP LOCKED
-  `;
+  return prisma.outboxEvent.findMany({
+    where: { processed: false },
+    orderBy: { createdAt: 'asc' },
+    take: batchSize,
+    select: {
+      id: true,
+      eventCode: true,
+      applicationId: true,
+      payload: true,
+      attempts: true,
+    },
+  });
 }
 
 export async function markProcessed(id: string) {

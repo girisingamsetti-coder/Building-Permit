@@ -1,5 +1,5 @@
 import 'server-only';
-import type { DocumentStatus, Prisma } from '@prisma/client';
+import type { DocumentStatus, ScanStatus, Prisma } from '@prisma/client';
 import { prisma, type Db, type Tx } from '@/server/db/prisma';
 import { applicationScope } from '@/server/auth/scope';
 import { isLtp, type AuthUser } from '@/server/auth/context';
@@ -289,7 +289,8 @@ function shapeRequirement(row: RequirementRow): ResolvedRequirement {
   // The platform allow-list is the ceiling. A document type may narrow it;
   // nothing may widen it, so a mis-typed extension in the configuration cannot
   // open the upload pipeline to a file class it was never meant to accept.
-  const configured = type.allowedExtensions.length ? type.allowedExtensions : [...DOCUMENT_EXTENSIONS];
+  const rawExts = Array.isArray(type.allowedExtensions) ? (type.allowedExtensions as string[]) : [];
+  const configured = rawExts.length ? rawExts : [...DOCUMENT_EXTENSIONS];
   const allowedExtensions = configured
     .map((e) => e.toLowerCase().replace(/^\./, ''))
     .filter((e) => (ALLOWED_UPLOAD_EXTENSIONS as readonly string[]).includes(e));
@@ -553,7 +554,7 @@ function entryFor(
   requiresVerification: boolean,
   names: Map<string, string>
 ): ChecklistEntry {
-  const status: DocumentStatus = document?.status ?? 'NOT_UPLOADED';
+  const status = (document?.status ?? 'NOT_UPLOADED') as DocumentStatus;
   const active = document?.versions.find((v) => v.isActive) ?? null;
   const expired = isExpired(active?.expiresOn ?? null);
 
@@ -610,12 +611,12 @@ function entryForExtra(
     whyRequired: '',
     requiresExpiry: type.requiresExpiry,
     maxBytes: (type.maxSizeMb || DEFAULT_DOCUMENT_MAX_MB) * 1024 * 1024,
-    allowedExtensions: type.allowedExtensions.length
-      ? type.allowedExtensions
+    allowedExtensions: Array.isArray(type.allowedExtensions) && type.allowedExtensions.length
+      ? (type.allowedExtensions as string[])
       : [...DOCUMENT_EXTENSIONS],
     documentId: document.id,
-    status: document.status,
-    satisfied: satisfiesRequirement(document.status, requiresVerification) && !expired,
+    status: document.status as DocumentStatus,
+    satisfied: satisfiesRequirement(document.status as DocumentStatus, requiresVerification) && !expired,
     outstandingReason: null,
     expired,
     currentVersionNo: document.currentVersionNo,
@@ -632,11 +633,12 @@ function shapeVersion(
 ): ChecklistVersion {
   return {
     ...version,
+    status: version.status as DocumentStatus,
     uploadedByName: names.get(version.uploadedById) ?? 'Unknown user',
-    downloadable: isServable(version.file.scanStatus),
+    downloadable: isServable(version.file.scanStatus as ScanStatus),
     // Preview needs BOTH a cleared file and a type that is safe to render
     // inline from this origin. See lib/documents.ts.
-    previewable: isServable(version.file.scanStatus) && isPreviewable(version.file.mimeType),
+    previewable: isServable(version.file.scanStatus as ScanStatus) && isPreviewable(version.file.mimeType),
   };
 }
 
@@ -806,9 +808,10 @@ export async function uploadDocument(user: AuthUser, input: UploadDocumentInput,
   // the counter with a printout. It simply does not count towards completeness.
   const limits = requirement ?? {
     maxBytes: (type.maxSizeMb || DEFAULT_DOCUMENT_MAX_MB) * 1024 * 1024,
-    allowedExtensions: (type.allowedExtensions.length
-      ? type.allowedExtensions
-      : [...DOCUMENT_EXTENSIONS]
+    allowedExtensions: (
+      Array.isArray(type.allowedExtensions) && type.allowedExtensions.length
+        ? (type.allowedExtensions as string[])
+        : [...DOCUMENT_EXTENSIONS]
     ).filter((e) => (ALLOWED_UPLOAD_EXTENSIONS as readonly string[]).includes(e)),
     isMandatory: false,
   };
@@ -1319,10 +1322,10 @@ function registerWhere(
     const q = query.q;
     and.push({
       OR: [
-        { application: { applicationNumber: { contains: q, mode: 'insensitive' } } },
-        { application: { applicant: { name: { contains: q, mode: 'insensitive' } } } },
-        { documentType: { name: { contains: q, mode: 'insensitive' } } },
-        { documentType: { code: { contains: q, mode: 'insensitive' } } },
+        { application: { applicationNumber: { contains: q } } },
+        { application: { applicant: { name: { contains: q } } } },
+        { documentType: { name: { contains: q } } },
+        { documentType: { code: { contains: q } } },
       ],
     });
   }

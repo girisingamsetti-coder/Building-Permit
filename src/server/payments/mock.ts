@@ -142,7 +142,7 @@ export class MockPaymentProvider implements PaymentProvider {
     // gateway that claims a different figure — the one case where a settlement
     // must refuse rather than credit.
     const delta = await settingNumber('mock_payment_amount_delta', 0);
-    const amount = attempt ? attempt.amount.plus(delta).toFixed(2) : null;
+    const amount = attempt ? (Number(attempt.amount) + delta).toFixed(2) : null;
 
     const state = MODE_STATES[mode] ?? 'PENDING';
 

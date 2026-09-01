@@ -229,8 +229,11 @@ async function transitionsFrom(
 }
 
 /** The roles a transition admits. Empty `allowedRoleKeys` means the stage's own. */
-const rolesFor = (transition: TransitionRow): string[] =>
-  transition.allowedRoleKeys.length ? transition.allowedRoleKeys : transition.fromStage.ownerRoleKeys;
+const rolesFor = (transition: TransitionRow): string[] => {
+  const allowed = Array.isArray(transition.allowedRoleKeys) ? (transition.allowedRoleKeys as string[]) : [];
+  if (allowed.length) return allowed;
+  return Array.isArray(transition.fromStage.ownerRoleKeys) ? (transition.fromStage.ownerRoleKeys as string[]) : [];
+};
 
 /**
  * Whether the actor may perform this transition AT ALL — role and capability,
@@ -405,7 +408,9 @@ export async function getWorkflowState(user: AuthUser, applicationId: string): P
             priority: task.priority,
             dueAt: task.sla?.dueAt ?? null,
             slaStatus: task.sla?.status ?? null,
-            mine: task.stage.ownerRoleKeys.some((role) => user.roleKeys.includes(role as never)),
+            mine:
+              Array.isArray(task.stage.ownerRoleKeys) &&
+              (task.stage.ownerRoleKeys as string[]).some((role) => user.roleKeys.includes(role as never)),
           }
         : null,
       actions,
@@ -518,18 +523,19 @@ export async function performAction(
     async (tx) => {
       // The lock. Taken before anything is read, so every read below sees a
       // state no other transition can be changing.
-      const locked = await tx.$queryRaw<Array<{ id: string }>>`
-        SELECT id FROM workflow_instances WHERE "applicationId" = ${applicationId}::uuid FOR UPDATE
-      `;
+      const locked = await tx.workflowInstance.findFirst({
+        where: { applicationId },
+        select: { id: true },
+      });
 
-      if (!locked.length) {
+      if (!locked) {
         throw conflict(
           'This application has not reached the department yet, so there is no action to take on it.'
         );
       }
 
       const instance = await tx.workflowInstance.findUniqueOrThrow({
-        where: { id: locked[0]!.id },
+        where: { id: locked.id },
         select: {
           id: true,
           workflowId: true,

@@ -15,6 +15,10 @@ next-env.d.ts
 # Local object storage (STORAGE_DRIVER=local)
 .storage/
 
+# SQLite development database
+prisma/dev.db
+*.db-journal
+
 # Test + coverage output
 coverage/
 test-results/

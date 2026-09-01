@@ -185,8 +185,8 @@ export type FinanceSummary = {
   shortfallDemands: number;
 };
 
-const toNumber = (value: Prisma.Decimal | null | undefined): number =>
-  value ? Number(value.toFixed(2)) : 0;
+const toNumber = (value: Prisma.Decimal | number | null | undefined): number =>
+  value === null || value === undefined ? 0 : Number(value);
 
 export async function financeSummary(user: AuthUser): Promise<FinanceSummary> {
   const feeWhere: Prisma.ApplicationFeeWhereInput = {
@@ -838,10 +838,10 @@ export async function deskConsolidation(user: AuthUser): Promise<DeskRow[]> {
       stageCode: stage.code,
       label: STAGE_LABELS[stage.code] ?? stage.name,
       sequence: stage.sequence,
-      roleKeys: stage.ownerRoleKeys,
+      roleKeys: Array.isArray(stage.ownerRoleKeys) ? (stage.ownerRoleKeys as string[]) : [],
       // A desk owned by two roles (ZAD and ZDD share one) counts the holders
       // of either, without double-counting a person who holds both.
-      officers: stage.ownerRoleKeys.reduce((sum, key) => sum + (activeByRole.get(key) ?? 0), 0),
+      officers: (Array.isArray(stage.ownerRoleKeys) ? (stage.ownerRoleKeys as string[]) : []).reduce((sum, key) => sum + (activeByRole.get(key) ?? 0), 0),
       applications: applicationsAt.get(stage.code) ?? 0,
       openTasks: here.length,
       unclaimed: here.filter((t) => !t.assignedUserId).length,

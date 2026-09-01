@@ -50,19 +50,13 @@ import { settingString } from './settings';
  *              year, so each year restarts at 1.
  */
 export async function nextSequence(tx: Tx, scope: string): Promise<number> {
-  const rows = await tx.$queryRaw<Array<{ next: number }>>`
-    SELECT lams_next_sequence(${scope}) AS next
-  `;
+  const row = await tx.numberSequence.upsert({
+    where: { scope },
+    create: { scope, current: 1 },
+    update: { current: { increment: 1 } },
+  });
 
-  const next = rows[0]?.next;
-  if (typeof next !== 'number' || !Number.isFinite(next)) {
-    // The function is installed by a migration. If it is missing, the database
-    // is not at the schema this code requires, and silently inventing a number
-    // would be far worse than refusing.
-    throw new Error(`Sequence allocation failed for scope "${scope}".`);
-  }
-
-  return next;
+  return row.current;
 }
 
 /**

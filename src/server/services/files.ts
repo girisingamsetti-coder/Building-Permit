@@ -134,7 +134,7 @@ export async function storeUpload(input: StoreUploadInput): Promise<StoredFile> 
       return row;
     });
 
-    return created;
+    return created as StoredFile;
   } catch (err) {
     // The bytes are already in storage but the row that would ever find them
     // again is not. Without this the bucket accumulates orphans that no
@@ -160,7 +160,7 @@ export async function readFileObject(fileObjectId: string): Promise<{
 
   if (!file) throw badRequest('That file is no longer available.');
 
-  assertServable(file.scanStatus);
+  assertServable(file.scanStatus as ScanStatus);
 
   return {
     bytes: await storage.get(file.storageKey),

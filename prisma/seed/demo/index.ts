@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { RBAC_MATRIX } from '../../../src/lib/rbac-matrix';
-import { ROLES, type RoleKey } from '../../../src/lib/constants';
+import { type RoleKey } from '../../../src/lib/constants';
 import { sweepSla } from '../../../src/server/workflow/sla';
 import { invalidateSettingsCache } from '../../../src/server/services/settings';
 import { makeRng } from './rng';
@@ -278,8 +278,15 @@ async function resetApplicationData() {
 
   console.log(`  Reset       truncating application data on ${describeDatabase()}`);
 
-  const list = TRUNCATE_TABLES.map((t) => `"${t}"`).join(', ');
-  await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE`);
+  await prisma.$executeRawUnsafe(`PRAGMA foreign_keys = OFF`);
+  for (const t of TRUNCATE_TABLES) {
+    try {
+      await prisma.$executeRawUnsafe(`DELETE FROM "${t}"`);
+    } catch {
+      // Table might not exist or already be empty
+    }
+  }
+  await prisma.$executeRawUnsafe(`PRAGMA foreign_keys = ON`);
 }
 
 /** Host and database name only — never the credentials. */

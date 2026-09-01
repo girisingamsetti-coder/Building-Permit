@@ -107,11 +107,11 @@ export async function listShortfalls(user: AuthUser, query: ShortfallListQuery =
         ? [
             {
               OR: [
-                { shortfallNumber: { contains: query.q, mode: 'insensitive' as const } },
-                { title: { contains: query.q, mode: 'insensitive' as const } },
+                { shortfallNumber: { contains: query.q } },
+                { title: { contains: query.q } },
                 {
                   application: {
-                    applicationNumber: { contains: query.q, mode: 'insensitive' as const },
+                    applicationNumber: { contains: query.q },
                   },
                 },
               ],

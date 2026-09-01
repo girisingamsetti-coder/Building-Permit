@@ -1,5 +1,5 @@
 import 'server-only';
-import type { Prisma } from '@prisma/client';
+import type { Prisma, ScanStatus } from '@prisma/client';
 import { prisma } from '@/server/db/prisma';
 import { applicationScope } from '@/server/auth/scope';
 import { isLtp, type AuthUser } from '@/server/auth/context';
@@ -370,7 +370,7 @@ function shapeDrawing(drawing: DrawingRow, uploaderNames: Map<string, string> = 
       return {
         ...version,
         uploadedByName: uploaderNames.get(version.uploadedById) ?? 'Unknown user',
-        downloadable: isServable(version.file.scanStatus),
+        downloadable: isServable(version.file.scanStatus as ScanStatus),
         latestScrutiny: latestRequest,
         scrutinyOutcome: latestRequest?.result?.outcome ?? null,
       };

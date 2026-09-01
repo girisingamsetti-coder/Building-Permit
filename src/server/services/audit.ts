@@ -30,14 +30,6 @@ export type AuditInput = {
   correlationId?: string;
 };
 
-/**
- * The chain's advisory-lock key.
- *
- * One constant, because there is one chain. Advisory locks share a namespace
- * across the whole database, so the number is arbitrary but must not collide
- * with another subsystem's; nothing else in this codebase takes one.
- */
-const AUDIT_CHAIN_LOCK = 4_820_113_001n;
 
 /** A TransactionClient is a PrismaClient minus the methods that start one. */
 const isTransaction = (db: Db): db is Tx => !('$transaction' in db);
@@ -65,18 +57,15 @@ export async function audit(db: Db, input: AuditInput) {
 }
 
 async function append(db: Tx, input: AuditInput) {
-  // `$executeRaw`, not `$queryRaw`: the lock function returns void, which has
-  // no Prisma column type to deserialise into.
-  await db.$executeRaw`SELECT pg_advisory_xact_lock(${AUDIT_CHAIN_LOCK})`;
-
   const prev = await db.auditLog.findFirst({
     // By `seq`, never by `occurredAt`: a millisecond timestamp is not a total
     // order, and rows tie on it routinely.
     orderBy: { seq: 'desc' },
-    select: { rowHash: true },
+    select: { seq: true, rowHash: true },
   });
 
   const prevHash = prev?.rowHash ?? '';
+  const seq = (prev?.seq ?? 0) + 1;
   const occurredAt = new Date();
 
   const row = {
@@ -97,7 +86,7 @@ async function append(db: Tx, input: AuditInput) {
   };
 
   return db.auditLog.create({
-    data: { ...row, prevHash, rowHash: computeRowHash(prevHash, row) },
+    data: { ...row, seq, prevHash, rowHash: computeRowHash(prevHash, row) },
   });
 }
 
@@ -190,9 +179,9 @@ export async function applicationAudit(applicationId: string, limit = 200) {
  * history — it makes rewriting it *undetectably* substantially harder, which
  * is the realistic goal.
  */
-export type ChainVerification = { checked: number; from: bigint } & (
+export type ChainVerification = { checked: number; from: number } & (
   | { ok: true }
-  | { ok: false; brokenAtId: string; brokenAtSeq: bigint }
+  | { ok: false; brokenAtId: string; brokenAtSeq: number }
 );
 
 /**
@@ -208,18 +197,18 @@ export type ChainVerification = { checked: number; from: bigint } & (
  * On a fresh deployment the anchor is 0 and the whole table is verified, which
  * is the case that actually matters.
  */
-async function chainAnchor(): Promise<bigint> {
+async function chainAnchor(): Promise<number> {
   const row = await prisma.systemSetting.findUnique({
     where: { key: 'audit_chain_anchor_seq' },
     select: { value: true },
   });
 
   try {
-    const parsed = BigInt(row?.value ?? '0');
-    return parsed > 0n ? parsed : 0n;
+    const parsed = Number(row?.value ?? '0');
+    return parsed > 0 ? parsed : 0;
   } catch {
     // A malformed anchor must not silently narrow the verification to nothing.
-    return 0n;
+    return 0;
   }
 }
 
@@ -227,7 +216,7 @@ export async function verifyAuditChain(limit = 10_000): Promise<ChainVerificatio
   const from = await chainAnchor();
 
   const [anchorRow, rows] = await Promise.all([
-    from === 0n
+    from === 0
       ? Promise.resolve(null)
       : prisma.auditLog.findFirst({ where: { seq: from }, select: { rowHash: true } }),
     prisma.auditLog.findMany({
@@ -261,7 +250,7 @@ export async function verifyAuditChain(limit = 10_000): Promise<ChainVerificatio
     });
 
     if (row.prevHash !== expectedPrev || row.rowHash !== recomputed) {
-      return { ok: false, checked, from, brokenAtId: row.id, brokenAtSeq: row.seq };
+      return { ok: false, checked, from, brokenAtId: String(row.id), brokenAtSeq: row.seq };
     }
 
     expectedPrev = row.rowHash;

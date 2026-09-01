@@ -24,7 +24,7 @@ import type { Tx } from '@/server/db/prisma';
 export type StageForAssignment = {
   id: string;
   code: string;
-  ownerRoleKeys: string[];
+  ownerRoleKeys: string[] | unknown;
 };
 
 export type Assignment = {
@@ -42,8 +42,9 @@ export async function resolveAssignment(
   stage: StageForAssignment,
   application: { zoneId: string | null }
 ): Promise<Assignment> {
+  const ownerRoles = Array.isArray(stage.ownerRoleKeys) ? (stage.ownerRoleKeys as string[]) : [];
   const fallback: Assignment = {
-    roleKey: stage.ownerRoleKeys[0] ?? '',
+    roleKey: ownerRoles[0] ?? '',
     userId: null,
     zoneId: application.zoneId,
     priority: 0,
@@ -71,7 +72,7 @@ export async function resolveAssignment(
   // A rule may only address a role the stage actually owns. The publish-time
   // validator enforces this, but a rule written before an owner list was
   // narrowed would otherwise route a file to a desk that no longer exists.
-  const rule = rules.find((r) => stage.ownerRoleKeys.includes(r.roleKey));
+  const rule = rules.find((r) => ownerRoles.includes(r.roleKey));
   if (!rule) return fallback;
 
   const base: Assignment = {
@@ -80,7 +81,7 @@ export async function resolveAssignment(
     zoneId: application.zoneId,
     priority: rule.priority,
     ruleId: rule.id,
-    strategy: rule.strategy,
+    strategy: rule.strategy as any,
   };
 
   if (rule.strategy === 'DIRECT') {
