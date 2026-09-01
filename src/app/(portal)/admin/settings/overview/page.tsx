@@ -4,8 +4,7 @@ import { prisma } from '@/server/db/prisma';
 import { requirePageCapability } from '@/server/auth/page-guard';
 import { CAPABILITIES } from '@/lib/constants';
 import { KpiCard } from '@/components/common/kpi-card';
-import { Panel } from '@/features/dashboard/panels';
-import { StatRow } from '@/features/dashboard/stat-row';
+import { Panel, StatRow } from '@/features/dashboard/panels';
 
 export const metadata: Metadata = { title: 'System Overview' };
 export const dynamic = 'force-dynamic';
