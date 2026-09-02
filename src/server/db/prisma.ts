@@ -6,7 +6,11 @@ import { env } from '@/server/config/env';
  * Resolves PostgreSQL database location from environment.
  */
 function resolveDatabaseUrl(): string {
-  return env.databaseUrl || process.env.DATABASE_URL || '';
+  return (
+    env.databaseUrl ||
+    process.env.DATABASE_URL ||
+    'postgresql://postgres.bunfbgaxbueririehybw:Digitaltwin%405678@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=10&pool_timeout=20'
+  );
 }
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };

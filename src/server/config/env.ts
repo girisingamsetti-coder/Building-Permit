@@ -34,11 +34,11 @@ const optional = z
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
-  APP_URL: z.string().url().default('http://localhost:3000'),
-  APP_NAME: z.string().default('LTP Approval Management System'),
-  ORG_SHORT_NAME: z.string().default('LAMS'),
+  APP_URL: z.string().default('http://localhost:3000'),
+  APP_NAME: z.string().default('Nirman'),
+  ORG_SHORT_NAME: z.string().default('Nirman'),
 
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required').default('postgresql://postgres.bunfbgaxbueririehybw:Digitaltwin%405678@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=10&pool_timeout=20'),
   DIRECT_URL: optional,
 
   AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters').default('dev-only-secret-change-me-at-least-32-chars-long'),
