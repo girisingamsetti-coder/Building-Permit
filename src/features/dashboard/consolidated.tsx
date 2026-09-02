@@ -342,7 +342,7 @@ export function PipelineStrip({
   return (
     <Panel
       title="The pipeline, end to end"
-      className="lg:w-1/4 h-fit"
+      className="lg:w-1/4"
     >
       <DonutChart
         slices={[
@@ -352,8 +352,9 @@ export function PipelineStrip({
         ]}
         total={total}
         totalLabel="Total Files"
-        className="mt-2 !flex-col !items-center"
+        className="mb-6 mt-2 !flex-col !items-center"
       />
+
     </Panel>
   );
 }
