@@ -342,7 +342,7 @@ export function PipelineStrip({
   return (
     <Panel
       title="The pipeline, end to end"
-      description="Where every file is, from the applicant's desk to the Commissioner's. Each file is counted exactly once."
+      className="lg:w-1/4"
     >
       <DonutChart
         slices={[
@@ -352,10 +352,10 @@ export function PipelineStrip({
         ]}
         total={total}
         totalLabel="Total Files"
-        className="mb-6 mt-2"
+        className="mb-6 mt-2 !flex-col !items-center"
       />
 
-      <div className="mt-6 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-4 pt-6 border-t border-border">
+      <div className="mt-6 grid grid-cols-1 gap-y-4 pt-6 border-t border-border">
         <StatRow
           label="Unclaimed at a desk"
           value={review.reduce((sum, d) => sum + d.unclaimed, 0)}
@@ -381,7 +381,7 @@ export function PipelineStrip({
         />
       </div>
 
-      <p className="mt-3 text-caption text-text-muted">
+      <p className="mt-5 text-caption text-text-muted">
         {withApplicant.toLocaleString('en-IN')} with the applicant +{' '}
         {inReview.toLocaleString('en-IN')} at a desk + {closed.toLocaleString('en-IN')} closed ={' '}
         {total.toLocaleString('en-IN')}. A file parked on a shortfall is counted as with the
