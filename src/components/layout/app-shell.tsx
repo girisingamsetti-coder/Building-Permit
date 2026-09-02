@@ -57,7 +57,7 @@ export function AppShell({
             <Button
               variant="secondary"
               size="icon"
-              className="absolute -right-3 top-1/2 -translate-y-1/2 z-40 hidden lg:flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface text-text-muted shadow-sm hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="absolute -right-3 top-1/2 -translate-y-1/2 z-40 hidden lg:flex h-6 w-6 items-center justify-center rounded-full border bg-surface text-text-muted shadow-sm hover:text-text hover:bg-surface-sunk dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-600 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={() => setCollapsed((v) => !v)}
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
