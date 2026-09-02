@@ -342,7 +342,7 @@ export function PipelineStrip({
   return (
     <Panel
       title="The pipeline, end to end"
-      className="lg:w-1/4"
+      className="lg:w-1/4 h-fit"
     >
       <DonutChart
         slices={[
@@ -352,41 +352,8 @@ export function PipelineStrip({
         ]}
         total={total}
         totalLabel="Total Files"
-        className="mb-6 mt-2 !flex-col !items-center"
+        className="mt-2 !flex-col !items-center"
       />
-
-      <div className="mt-6 grid grid-cols-1 gap-y-4 pt-6 border-t border-border">
-        <StatRow
-          label="Unclaimed at a desk"
-          value={review.reduce((sum, d) => sum + d.unclaimed, 0)}
-          hint="Nobody has opened these yet"
-          tone="warning"
-        />
-        <StatRow
-          label="Overdue at a desk"
-          value={review.reduce((sum, d) => sum + d.overdue, 0)}
-          hint="Reported, never enforced"
-          tone="danger"
-        />
-        <StatRow
-          label="Due soon"
-          value={review.reduce((sum, d) => sum + d.dueSoon, 0)}
-          tone="warning"
-        />
-        <StatRow
-          label="Open shortfalls raised"
-          value={desks.reduce((sum, d) => sum + d.openShortfalls, 0)}
-          hint="Across every desk"
-          tone="warning"
-        />
-      </div>
-
-      <p className="mt-5 text-caption text-text-muted">
-        {withApplicant.toLocaleString('en-IN')} with the applicant +{' '}
-        {inReview.toLocaleString('en-IN')} at a desk + {closed.toLocaleString('en-IN')} closed ={' '}
-        {total.toLocaleString('en-IN')}. A file parked on a shortfall is counted as with the
-        applicant, not at the desk that parked it — the department is not working on it.
-      </p>
     </Panel>
   );
 }
