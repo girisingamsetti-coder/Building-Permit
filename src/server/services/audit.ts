@@ -57,16 +57,19 @@ export async function audit(db: Db, input: AuditInput) {
 }
 
 async function append(db: Tx, input: AuditInput) {
+  // A hash-chained audit log requires strictly sequential writes.
+  // Instead of a retry loop (which aborts the parent Postgres transaction on P2002),
+  // we take a transaction-level advisory lock to serialize audit writes safely.
+  await db.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(13371338)`);
+
   const prev = await db.auditLog.findFirst({
-    // By `seq`, never by `occurredAt`: a millisecond timestamp is not a total
-    // order, and rows tie on it routinely.
     orderBy: { seq: 'desc' },
     select: { seq: true, rowHash: true },
   });
 
+  const occurredAt = new Date();
   const prevHash = prev?.rowHash ?? '';
   const seq = (prev?.seq ?? 0) + 1;
-  const occurredAt = new Date();
 
   const row = {
     actorId: input.actor?.id ?? null,
@@ -85,7 +88,7 @@ async function append(db: Tx, input: AuditInput) {
     occurredAt,
   };
 
-  return db.auditLog.create({
+  return await db.auditLog.create({
     data: { ...row, seq, prevHash, rowHash: computeRowHash(prevHash, row) },
   });
 }

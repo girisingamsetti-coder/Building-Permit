@@ -429,7 +429,7 @@ async function main() {
   const items = planItems().sort((a, b) => {
     const rank = (s: Stop) => (s === 'SCRUTINY_QUEUED' ? 1 : 0);
     return rank(a.stop) - rank(b.stop);
-  }).slice(0, 15); // REDUCED TO 15 TO AVOID DB TIMEOUTS
+  }); // ALL ITEMS
 
   console.log(`  Building    ${items.length} applications through the real services…`);
 

@@ -80,7 +80,7 @@ export const PLAN: PlanEntry[] = [
   // ── Applicant side: 35 ────────────────────────────────────────────────
   {
     stop: 'DRAFT_EARLY',
-    count: 2,
+    count: 4,
     landsOn: 'DRAFT',
     stageCode: null,
     ageDays: [1, 6],
@@ -88,7 +88,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'DRAFT_LATE',
-    count: 3,
+    count: 6,
     landsOn: 'DRAFT',
     stageCode: null,
     ageDays: [3, 20],
@@ -96,7 +96,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'SUBMITTED',
-    count: 4,
+    count: 8,
     landsOn: 'SUBMITTED',
     stageCode: null,
     ageDays: [4, 28],
@@ -104,7 +104,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'DRAWING_UPLOADED',
-    count: 3,
+    count: 6,
     landsOn: 'DRAWING_UPLOADED',
     stageCode: null,
     ageDays: [6, 35],
@@ -112,7 +112,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'SCRUTINY_QUEUED',
-    count: 2,
+    count: 4,
     landsOn: 'SCRUTINY_IN_PROGRESS',
     stageCode: null,
     ageDays: [1, 3],
@@ -120,7 +120,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'SCRUTINY_FAILED',
-    count: 3,
+    count: 6,
     landsOn: 'SCRUTINY_FAILED',
     stageCode: null,
     ageDays: [8, 45],
@@ -128,7 +128,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'SCRUTINY_REUPLOADED',
-    count: 2,
+    count: 4,
     landsOn: 'DRAWING_UPLOADED',
     stageCode: null,
     ageDays: [10, 50],
@@ -136,7 +136,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'SCRUTINY_PASSED',
-    count: 3,
+    count: 6,
     landsOn: 'SCRUTINY_PASSED',
     stageCode: null,
     ageDays: [9, 40],
@@ -144,7 +144,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'DOCUMENTS_PARTIAL',
-    count: 3,
+    count: 6,
     landsOn: 'DOCUMENT_UPLOAD_PENDING',
     stageCode: null,
     ageDays: [12, 55],
@@ -152,7 +152,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'DOCUMENTS_COMPLETE',
-    count: 2,
+    count: 4,
     landsOn: 'DOCUMENTS_COMPLETED',
     stageCode: null,
     ageDays: [14, 60],
@@ -160,7 +160,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'FEE_GENERATED',
-    count: 3,
+    count: 6,
     landsOn: 'FEE_GENERATED',
     stageCode: null,
     ageDays: [15, 65],
@@ -168,7 +168,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'PAYMENT_PENDING',
-    count: 2,
+    count: 4,
     landsOn: 'PAYMENT_PENDING',
     stageCode: null,
     ageDays: [2, 12],
@@ -176,7 +176,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'PAYMENT_FAILED',
-    count: 3,
+    count: 6,
     landsOn: 'PAYMENT_FAILED',
     stageCode: null,
     ageDays: [3, 30],
@@ -186,7 +186,7 @@ export const PLAN: PlanEntry[] = [
   // ── Departmental side: 35 ─────────────────────────────────────────────
   {
     stop: 'TPA_UNCLAIMED',
-    count: 3,
+    count: 6,
     landsOn: 'PENDING_TPA',
     stageCode: 'TPA_REVIEW',
     ageDays: [20, 75],
@@ -194,7 +194,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'TPA_CLAIMED',
-    count: 1,
+    count: 2,
     landsOn: 'PENDING_TPA',
     stageCode: 'TPA_REVIEW',
     ageDays: [22, 80],
@@ -206,7 +206,7 @@ export const PLAN: PlanEntry[] = [
     // alone does not change the application's status, and seeding one that
     // says otherwise would show a state the engine cannot produce.
     stop: 'TPA_REVIEWING',
-    count: 1,
+    count: 2,
     landsOn: 'TPA_REVIEW',
     stageCode: 'TPA_REVIEW',
     ageDays: [24, 82],
@@ -214,7 +214,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'TPA_DOCUMENT_SHORTFALL',
-    count: 1,
+    count: 2,
     landsOn: 'TPA_DOCUMENT_SHORTFALL',
     stageCode: 'LTP_SHORTFALL_ACTION',
     ageDays: [25, 70],
@@ -238,7 +238,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'ZAD_UNCLAIMED',
-    count: 2,
+    count: 3,
     landsOn: 'PENDING_ZAD_ZDD',
     stageCode: 'ZAD_ZDD_REVIEW',
     ageDays: [30, 95],
@@ -270,7 +270,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'ZJD_UNCLAIMED',
-    count: 4,
+    count: 7,
     landsOn: 'PENDING_ZJD',
     stageCode: 'ZJD_REVIEW',
     ageDays: [40, 110],
@@ -286,7 +286,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'DIRECTOR_UNCLAIMED',
-    count: 3,
+    count: 5,
     landsOn: 'PENDING_DIRECTOR_DP',
     stageCode: 'DIRECTOR_DP_REVIEW',
     ageDays: [50, 125],
@@ -302,7 +302,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'ADDL_COMMISSIONER_UNCLAIMED',
-    count: 2,
+    count: 3,
     landsOn: 'PENDING_ADDITIONAL_COMMISSIONER',
     stageCode: 'ADDL_COMMISSIONER_REVIEW',
     ageDays: [60, 140],
@@ -318,7 +318,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'COMMISSIONER_UNCLAIMED',
-    count: 3,
+    count: 5,
     landsOn: 'PENDING_COMMISSIONER',
     stageCode: 'COMMISSIONER_REVIEW',
     ageDays: [70, 155],
@@ -326,7 +326,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'APPROVED',
-    count: 5,
+    count: 8,
     landsOn: 'APPROVED',
     stageCode: 'CLOSED_APPROVED',
     ageDays: [80, 200],
@@ -334,7 +334,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'REJECTED',
-    count: 2,
+    count: 3,
     landsOn: 'REJECTED',
     stageCode: 'CLOSED_REJECTED',
     ageDays: [90, 190],

@@ -147,12 +147,16 @@ async function requireApplication(user: AuthUser, id: string): Promise<DetailApp
   // surface as a 500. It is simply not found.
   if (!isUuid(id)) throw notFound('That application could not be found.');
 
+  const scope = applicationScope(user);
   const app = await prisma.application.findFirst({
-    where: { id, deletedAt: null, ...applicationScope(user) },
+    where: { id, deletedAt: null, ...scope },
     include: DETAIL_INCLUDE,
   });
 
-  if (!app) throw notFound('That application could not be found.');
+  if (!app) {
+    console.error('requireApplication NOT FOUND:', { id, scope, userRoleKeys: user.roleKeys });
+    throw notFound('That application could not be found.');
+  }
   return app;
 }
 
@@ -460,7 +464,7 @@ export async function createApplication(user: AuthUser, input: CreateApplication
     });
 
     return app;
-  }, { timeout: 30000 });
+  }, { timeout: 120000 });
 
   return shapeDetail(created);
 }
@@ -593,7 +597,7 @@ export async function saveStep(user: AuthUser, id: string, input: SaveStepInput,
         metadata: { step: stepKey, firstCompletion },
       });
     }
-  });
+  }, { timeout: 120000 });
 
   return getWizardState(user, app.id);
 }
@@ -601,27 +605,15 @@ export async function saveStep(user: AuthUser, id: string, input: SaveStepInput,
 /** Applies a step's write payload to whichever child rows it touches. */
 async function applyStepWrite(tx: Tx, app: DetailApplication, write: StepWrite) {
   if (write.applicant) {
-    await tx.applicant.upsert({
-      where: { applicationId: app.id },
-      create: { applicationId: app.id, ...write.applicant },
-      update: write.applicant,
-    });
+    await tx.applicant.update({ where: { applicationId: app.id }, data: write.applicant });
   }
 
   if (write.property) {
-    await tx.propertyDetail.upsert({
-      where: { applicationId: app.id },
-      create: { applicationId: app.id, ...write.property },
-      update: write.property,
-    });
+    await tx.propertyDetail.update({ where: { applicationId: app.id }, data: write.property });
   }
 
   if (write.building) {
-    await tx.buildingDetail.upsert({
-      where: { applicationId: app.id },
-      create: { applicationId: app.id, ...write.building },
-      update: write.building,
-    });
+    await tx.buildingDetail.update({ where: { applicationId: app.id }, data: write.building });
   }
 
   if (write.application) {
@@ -783,7 +775,7 @@ export async function submitApplication(user: AuthUser, id: string, meta: Meta) 
     });
 
     return tx.application.findFirstOrThrow({ where: { id: app.id }, include: DETAIL_INCLUDE });
-  }, { timeout: 30000 });
+  }, { timeout: 120000 });
 
   return shapeDetail(updated);
 }
@@ -884,7 +876,7 @@ export async function deleteDraft(user: AuthUser, id: string, meta: Meta) {
       after: { deleted: true },
       ...meta,
     });
-  });
+  }, { timeout: 120000 });
 
   return { ok: true, applicationNumber: app.applicationNumber };
 }

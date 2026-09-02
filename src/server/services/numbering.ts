@@ -50,13 +50,17 @@ import { settingString } from './settings';
  *              year, so each year restarts at 1.
  */
 export async function nextSequence(tx: Tx, scope: string): Promise<number> {
-  const row = await tx.numberSequence.upsert({
-    where: { scope },
-    create: { scope, current: 1 },
-    update: { current: { increment: 1 } },
-  });
-
-  return row.current;
+  // Use raw SQL to avoid Prisma's upsert bugs with PgBouncer transaction mode.
+  // This guarantees an atomic read-modify-write in a single statement.
+  // We use gen_random_uuid() to bypass Prisma's missing client-side ID generation.
+  const res = await tx.$queryRaw<{ current: number }[]>`
+    INSERT INTO number_sequences (id, scope, current, "updatedAt") 
+    VALUES (gen_random_uuid(), ${scope}, 1, NOW())
+    ON CONFLICT (scope) DO UPDATE 
+    SET current = number_sequences.current + 1, "updatedAt" = NOW()
+    RETURNING current;
+  `;
+  return Number(res[0]!.current);
 }
 
 /**

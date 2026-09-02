@@ -155,7 +155,7 @@ function particulars(rng: Rng, profile: BuildingProfile) {
     fatherName: `${rng.pick(FIRST_NAMES)} ${rng.pick(SURNAMES)}`,
     phone: `9${rng.int(100000000, 999999999)}`,
     email: `${applicantName.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-    address: `${rng.int(1, 120)}-${rng.int(1, 40)}, ${rng.pick(STREETS)}, ${rng.pick(LOCALITIES)}`,
+    address: `${rng.int(1, 120)}-${rng.int(1, 40)}, ${rng.pick(STREETS)}, ${rng.pick(LOCALITIES)}, Amaravati, Andhra Pradesh, India`,
     ownerSame,
     ownerName: ownerSame ? '' : personName(rng),
     ownerPhone: ownerSame ? '' : `9${rng.int(100000000, 999999999)}`,

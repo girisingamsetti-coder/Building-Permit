@@ -28,20 +28,13 @@ export const SURNAMES = [
 
 /** Districts used as plausible addresses. */
 export const DISTRICTS = [
-  { name: 'Guntur', mandals: ['Guntur East', 'Guntur West', 'Tadikonda', 'Mangalagiri'] },
-  { name: 'Krishna', mandals: ['Vijayawada Rural', 'Penamaluru', 'Gannavaram', 'Ibrahimpatnam'] },
-  { name: 'Visakhapatnam', mandals: ['Gajuwaka', 'Bheemunipatnam', 'Anandapuram', 'Pendurthi'] },
-  { name: 'Nellore', mandals: ['Nellore Rural', 'Kovur', 'Muthukur', 'Venkatachalam'] },
-  { name: 'Kurnool', mandals: ['Kurnool', 'Kallur', 'Orvakal', 'Gudur'] },
-  { name: 'Anantapur', mandals: ['Anantapur', 'Rapthadu', 'Kuderu', 'Atmakur'] },
+  { name: 'NTR', mandals: ['Thullur', 'Mangalagiri', 'Tadepalle', 'Amaravati'] },
 ] as const;
 
 export const LOCALITIES = [
-  'Brodipet', 'Arundelpet', 'Lakshmipuram', 'Gorantla', 'Nallapadu',
-  'Patamata', 'Benz Circle', 'Gunadala', 'Bhavanipuram', 'Auto Nagar',
-  'MVP Colony', 'Seethammadhara', 'Madhurawada', 'Rushikonda',
-  'Dargamitta', 'Magunta Layout', 'Balaji Nagar', 'Santhapet',
-  'Ashok Nagar', 'Vidya Nagar', 'Shanti Nagar', 'Gandhi Nagar',
+  'Nelapadu', 'Rayapudi', 'Lingayapalem', 'Uddandarayunipalem', 'Velagapudi',
+  'Malkapuram', 'Mandadam', 'Venkatapalem', 'Krishnayapalem', 'Navuluru',
+  'Kuragallu', 'Neerukonda', 'Sakhamuru', 'Inavolu', 'Ananthavaram',
 ] as const;
 
 export const STREETS = [
