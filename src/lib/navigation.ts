@@ -11,6 +11,7 @@ import {
   Building2,
   SlidersHorizontal,
   MessageSquare,
+  LineChart,
   type LucideIcon,
 } from 'lucide-react';
 import { CAPABILITIES as C, type Capability } from './constants';
@@ -44,11 +45,8 @@ export type NavSection = {
 
 export const NAV: NavSection[] = [
   {
-    items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }],
-  },
-  {
-    label: 'Work',
     items: [
+      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       {
         label: 'Applications',
         href: '/applications',
@@ -56,9 +54,6 @@ export const NAV: NavSection[] = [
         capabilities: [C.APPLICATION_VIEW],
       },
       {
-        // WORKFLOW_VIEW, not WORKFLOW_CLAIM_TASK: a supervisor or an auditor
-        // may look at what is sitting at a desk without being able to take any
-        // of it. Claiming is gated on the button and again at the endpoint.
         label: 'Tasks',
         href: '/tasks',
         icon: ListChecks,
@@ -82,11 +77,12 @@ export const NAV: NavSection[] = [
         icon: FolderOpen,
         capabilities: [C.DOCUMENT_VIEW],
       },
-    ],
-  },
-  {
-    label: 'Administration',
-    items: [
+      {
+        label: 'Reports',
+        href: '/reports',
+        icon: LineChart,
+        capabilities: [C.APPLICATION_VIEW],
+      },
       {
         label: 'Settings',
         href: '/admin/settings',

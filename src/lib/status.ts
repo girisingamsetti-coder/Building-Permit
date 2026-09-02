@@ -17,7 +17,7 @@ const APPLICATION_STATUS: Record<string, Meta> = {
   SCRUTINY_IN_PROGRESS: { label: 'Scrutiny in progress', tone: 'info' },
   SCRUTINY_FAILED: { label: 'Scrutiny failed', tone: 'danger' },
   SCRUTINY_PASSED: { label: 'Scrutiny passed', tone: 'success' },
-  DOCUMENT_UPLOAD_PENDING: { label: 'Documents pending', tone: 'warning' },
+  DOCUMENT_UPLOAD_PENDING: { label: 'Documents Submission', tone: 'warning' },
   DOCUMENTS_COMPLETED: { label: 'Documents complete', tone: 'success' },
   FEE_GENERATED: { label: 'Fee generated', tone: 'warning' },
   PAYMENT_PENDING: { label: 'Payment pending', tone: 'warning' },

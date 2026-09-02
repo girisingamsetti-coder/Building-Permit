@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { PanelLeftClose, PanelLeft, Menu } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Menu } from 'lucide-react';
 import { Sidebar } from './sidebar';
 import { Breadcrumb } from './breadcrumb';
 import { GlobalSearch } from './global-search';
@@ -54,13 +54,13 @@ export function AppShell({
             <Sidebar capabilities={user.capabilities} collapsed={collapsed} />
 
             <Button
-              variant="outline"
+              variant="secondary"
               size="icon"
               className="absolute -right-3 top-1/2 -translate-y-1/2 z-40 hidden lg:flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface text-text-muted shadow-sm hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={() => setCollapsed((v) => !v)}
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              {collapsed ? <PanelLeft className="size-3.5" /> : <PanelLeftClose className="size-3.5" />}
+              {collapsed ? <ChevronRight className="size-3.5" /> : <ChevronLeft className="size-3.5" />}
             </Button>
           </div>
         </aside>

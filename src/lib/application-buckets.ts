@@ -113,7 +113,7 @@ export const BUCKETS: readonly BucketDef[] = [
   },
   {
     key: 'documentsPending',
-    label: 'Documents pending',
+    label: 'Documents Submission',
     statuses: ['DOCUMENT_UPLOAD_PENDING'],
     tone: 'warning',
     hint: 'Mandatory documents outstanding',

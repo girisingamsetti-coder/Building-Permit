@@ -117,6 +117,13 @@ export const DOCUMENT_TYPES: DocumentTypeSeed[] = [
     category: CATEGORIES.TECHNICAL,
     maxSizeMb: 20,
   },
+  {
+    code: 'BIM_MODEL',
+    name: 'BIM Model',
+    description: 'Building Information Model for 3D review and structural analysis.',
+    category: CATEGORIES.TECHNICAL,
+    maxSizeMb: 100,
+  },
 
   // ── Identity and authorisation ────────────────────────────────────────
   {
@@ -262,6 +269,13 @@ export const DOCUMENT_REQUIREMENTS: RequirementSeed[] = [
     condition: { exists: 'property.lpNumber' },
     displayOrder: 120,
     helpText: 'Required because the application records an approved layout number.',
+  },
+  {
+    documentTypeCode: 'BIM_MODEL',
+    applicationTypeCode: null,
+    isMandatory: true,
+    displayOrder: 130,
+    helpText: 'Required Building Information Model files for technical scrutiny.',
   },
 
   // ── Optional, on every application ────────────────────────────────────

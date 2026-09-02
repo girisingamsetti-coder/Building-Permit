@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import {
   FileText,
   AlertTriangle,
@@ -17,6 +16,22 @@ import {
   ScrollText,
   Landmark,
 } from 'lucide-react';
+import {
+  Icon3DStack,
+  Icon3DActivity,
+  Icon3DShieldCheck,
+  Icon3DCircleSlash,
+  Icon3DAlertOctagon,
+  Icon3DHourglass,
+  Icon3DTimer,
+  Icon3DGauge,
+  Icon3DCoins,
+  Icon3DLandmark,
+  Icon3DCircleDollar,
+  Icon3DTrendingUp,
+  Icon3DFileEdit,
+  Icon3DSparkles,
+} from '@/components/ui/icons-3d';
 import { KpiCard } from '@/components/common/kpi-card';
 import { Badge } from '@/components/ui/badge';
 import { statusMeta } from '@/lib/status';
@@ -292,25 +307,25 @@ export function AdminDashboard({
           <div className="space-y-1.5">
             <SectionHeading title="Caseload" />
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-              <KpiCard label="Total applications" value={applications.total} icon={FileText} href="/applications" tone="cyan" />
+              <KpiCard label="Total applications" value={applications.total} icon={Icon3DStack} href="/applications" tone="cyan" />
               <KpiCard
                 label="In progress"
                 value={applications.inProgress}
                 tone="blue"
-                icon={Clock}
+                icon={Icon3DActivity}
               />
               <KpiCard
                 label="Approved"
                 value={applications.approved}
                 tone="emerald"
-                icon={CheckCircle2}
+                icon={Icon3DShieldCheck}
                 href="/applications?bucket=approved"
               />
               <KpiCard
                 label="Rejected"
                 value={applications.rejected}
                 tone="rose"
-                icon={CircleX}
+                icon={Icon3DCircleSlash}
               />
             </div>
           </div>
@@ -323,28 +338,28 @@ export function AdminDashboard({
                 value={shortfalls.open}
                 tone="amber"
                 hint={shortfalls.overdue ? `${shortfalls.overdue} overdue` : undefined}
-                icon={AlertTriangle}
+                icon={Icon3DAlertOctagon}
                 href="/shortfalls"
               />
               <KpiCard
                 label="Overdue tasks"
                 value={sla.overdue}
                 tone="red"
-                icon={Gauge}
+                icon={Icon3DHourglass}
                 href="/tasks?filter=overdue"
               />
               <KpiCard
                 label="Due soon"
                 value={sla.dueSoon}
                 tone="orange"
-                icon={Clock}
+                icon={Icon3DTimer}
                 href="/tasks?filter=due-soon"
               />
               <KpiCard
                 label="Average time to decide"
                 value={sla.averageDaysToClose === null ? '—' : `${sla.averageDaysToClose} d`}
                 tone="indigo"
-                icon={Gauge}
+                icon={Icon3DGauge}
               />
             </div>
           </div>
@@ -356,26 +371,26 @@ export function AdminDashboard({
                 label="Fees generated"
                 value={formatMoneyCompact(finance.generated)}
                 tone="violet"
-                icon={Banknote}
+                icon={Icon3DCoins}
               />
               <KpiCard
                 label="Fees collected"
                 value={formatMoneyCompact(finance.collected)}
                 tone="green"
-                icon={CreditCard}
+                icon={Icon3DLandmark}
                 href="/payments"
               />
               <KpiCard
                 label="Pending fee"
                 value={formatMoneyCompact(finance.outstanding)}
                 tone="fuchsia"
-                icon={Banknote}
+                icon={Icon3DCircleDollar}
               />
               <KpiCard
                 label="Payment success rate"
                 value={`${finance.payments.successRate}%`}
                 tone="teal"
-                icon={CreditCard}
+                icon={Icon3DTrendingUp}
               />
             </div>
           </div>
@@ -484,25 +499,23 @@ export function ExecutiveDashboard({
       <SectionHeading title="Your desk" />
 
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label={copy.desk} value={queue.total} hint={copy.deskHint} icon={ClipboardCheck} href="/tasks" />
+        <KpiCard label={copy.desk} value={queue.total} hint={copy.deskHint} icon={Icon3DStack} href="/tasks" />
         <KpiCard
           label="Unclaimed"
           value={queue.unclaimed}
-          tone={queue.unclaimed ? 'info' : 'neutral'}
-          icon={ClipboardCheck}
+          icon={Icon3DFileEdit}
           href="/tasks?filter=new"
         />
         <KpiCard
           label="Held by you"
           value={queue.mine}
-          icon={Clock}
+          icon={Icon3DActivity}
           href="/tasks?filter=pending"
         />
         <KpiCard
           label="Overdue"
           value={queue.overdue}
-          tone={queue.overdue ? 'danger' : 'neutral'}
-          icon={AlertTriangle}
+          icon={Icon3DHourglass}
           href="/tasks?filter=overdue"
         />
       </div>
@@ -510,19 +523,18 @@ export function ExecutiveDashboard({
       <SectionHeading title="Department Overview" />
 
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total applications" value={applications.total} icon={FileText} href="/applications" />
-        <KpiCard label="In progress" value={applications.inProgress} tone="info" icon={Clock} />
+        <KpiCard label="Total applications" value={applications.total} icon={Icon3DStack} href="/applications" />
+        <KpiCard label="In progress" value={applications.inProgress} icon={Icon3DActivity} />
         <KpiCard
           label="Approved"
           value={applications.approved}
-          tone={applications.approved ? 'success' : 'neutral'}
-          icon={CheckCircle2}
+          icon={Icon3DShieldCheck}
           href="/applications?bucket=approved"
         />
         <KpiCard
           label="Average time to decide"
           value={sla.averageDaysToClose === null ? '—' : `${sla.averageDaysToClose} d`}
-          icon={Gauge}
+          icon={Icon3DGauge}
         />
       </div>
 
@@ -764,27 +776,25 @@ export function FinanceDashboard({ data }: { data: DashboardData }) {
           label="Demands issued"
           value={finance.demandsIssued}
           hint={finance.shortfallDemands ? `${finance.shortfallDemands} from shortfalls` : undefined}
-          icon={ScrollText}
+          icon={Icon3DFileEdit}
         />
         <KpiCard
           label="Total generated"
           value={formatMoneyCompact(finance.generated)}
           hint={formatMoney(finance.generated)}
-          icon={Banknote}
+          icon={Icon3DCoins}
         />
         <KpiCard
           label="Collected"
           value={formatMoneyCompact(finance.collected)}
-          tone="success"
           hint={`${finance.receipts} receipts`}
-          icon={CreditCard}
+          icon={Icon3DLandmark}
           href="/payments"
         />
         <KpiCard
           label="Outstanding"
           value={formatMoneyCompact(finance.outstanding)}
-          tone={finance.outstanding > 0 ? 'warning' : 'neutral'}
-          icon={Landmark}
+          icon={Icon3DCircleDollar}
         />
       </div>
 
@@ -865,28 +875,26 @@ export function ViewerDashboard({ data }: { data: DashboardData }) {
   return (
     <div className="space-y-3.5">
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total applications" value={applications.total} icon={FileText} href="/applications" />
-        <KpiCard label="In progress" value={applications.inProgress} tone="info" icon={Clock} />
-        <KpiCard label="Approved" value={applications.approved} tone="success" icon={CheckCircle2} />
+        <KpiCard label="Total applications" value={applications.total} icon={Icon3DStack} href="/applications" />
+        <KpiCard label="In progress" value={applications.inProgress} icon={Icon3DActivity} />
+        <KpiCard label="Approved" value={applications.approved} icon={Icon3DShieldCheck} />
         <KpiCard
           label="Open shortfalls"
           value={shortfalls.open}
-          tone={shortfalls.open ? 'warning' : 'neutral'}
-          icon={AlertTriangle}
+          icon={Icon3DAlertOctagon}
         />
-        <KpiCard label="Fees collected" value={formatMoneyCompact(finance.collected)} icon={CreditCard} />
+        <KpiCard label="Fees collected" value={formatMoneyCompact(finance.collected)} icon={Icon3DLandmark} />
         <KpiCard
           label="Overdue tasks"
           value={sla.overdue}
-          tone={sla.overdue ? 'danger' : 'neutral'}
-          icon={Gauge}
+          icon={Icon3DHourglass}
         />
         <KpiCard
           label="Average time to decide"
           value={sla.averageDaysToClose === null ? '—' : `${sla.averageDaysToClose} d`}
-          icon={Gauge}
+          icon={Icon3DGauge}
         />
-        <KpiCard label="Application types" value={applications.byType.length} icon={Layers} />
+        <KpiCard label="Application types" value={applications.byType.length} icon={Icon3DStack} />
       </div>
 
       <div className="grid gap-3 lg:grid-cols-2">

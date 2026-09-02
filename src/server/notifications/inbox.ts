@@ -57,7 +57,7 @@ export async function listNotifications(user: AuthUser, query: InboxQuery = {}) 
     }
   }
 
-  const [rows, unread, countsByCategory] = await Promise.all([
+  const [rows, countsByCategory] = await Promise.all([
     prisma.notification.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
@@ -75,7 +75,6 @@ export async function listNotifications(user: AuthUser, query: InboxQuery = {}) 
         application: { select: { applicationNumber: true } },
       },
     }),
-    prisma.notification.count({ where: { userId: user.id, isRead: false } }),
     getCategoryCounts(user.id),
   ]);
 
@@ -90,36 +89,39 @@ export async function listNotifications(user: AuthUser, query: InboxQuery = {}) 
       createdAt: row.createdAt,
       applicationNumber: row.application?.applicationNumber ?? '',
     })),
-    unread,
+    unread: countsByCategory.UNREAD,
     counts: countsByCategory,
   };
 }
 
 async function getCategoryCounts(userId: string) {
-  const allNotifications = await prisma.notification.findMany({
-    where: { userId },
-    select: { eventCode: true, isRead: true },
+  const { memoizeAsync } = await import('@/server/cache/memoize');
+  return memoizeAsync(`notifications:counts:${userId}`, 10, async () => {
+    const allNotifications = await prisma.notification.findMany({
+      where: { userId },
+      select: { eventCode: true, isRead: true },
+    });
+
+    const counts = {
+      ALL: allNotifications.length,
+      UNREAD: allNotifications.filter((n) => !n.isRead).length,
+      APPLICATIONS: 0,
+      PAYMENTS: 0,
+      SHORTFALLS: 0,
+      APPROVALS: 0,
+      SYSTEM: 0,
+    };
+
+    for (const notification of allNotifications) {
+      for (const [category, codes] of Object.entries(CATEGORY_EVENT_PATTERNS)) {
+        if (codes.includes(notification.eventCode)) {
+          counts[category as keyof typeof counts]++;
+        }
+      }
+    }
+
+    return counts;
   });
-
-  const counts = {
-    ALL: allNotifications.length,
-    UNREAD: allNotifications.filter((n) => !n.isRead).length,
-    APPLICATIONS: 0,
-    PAYMENTS: 0,
-    SHORTFALLS: 0,
-    APPROVALS: 0,
-    SYSTEM: 0,
-  };
-
-  for (const n of allNotifications) {
-    if (CATEGORY_EVENT_PATTERNS.APPLICATIONS.includes(n.eventCode)) counts.APPLICATIONS++;
-    else if (CATEGORY_EVENT_PATTERNS.PAYMENTS.includes(n.eventCode)) counts.PAYMENTS++;
-    else if (CATEGORY_EVENT_PATTERNS.SHORTFALLS.includes(n.eventCode)) counts.SHORTFALLS++;
-    else if (CATEGORY_EVENT_PATTERNS.APPROVALS.includes(n.eventCode)) counts.APPROVALS++;
-    else counts.SYSTEM++;
-  }
-
-  return counts;
 }
 
 export async function markRead(user: AuthUser, notificationId: string) {

@@ -26,9 +26,8 @@ export function KpiCard({
   tone?: KpiCardTone;
   href?: string;
   loading?: boolean;
-  icon?: React.ComponentType<{ className?: string; fill?: string; strokeWidth?: number }>;
+  icon?: React.ComponentType<{ className?: string; size?: number | string }>;
 }) {
-  const t = tone;
   const outerWrapper: Record<KpiCardTone, string> = {
     neutral: 'bg-gradient-to-br from-gray-200 via-gray-200/50 to-[#06B6D4]/50',
     info: 'bg-gradient-to-br from-gray-200 via-gray-200/50 to-[#3B82F6]/50',
@@ -117,8 +116,8 @@ export function KpiCard({
             )}
           </div>
           {Icon && (
-            <div className={cn('flex h-8 w-8 items-center justify-center rounded-full', iconBg[tone])}>
-              <Icon className="size-4" fill="currentColor" strokeWidth={2} />
+            <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-full p-1', iconBg[tone])}>
+              <Icon className="size-5" />
             </div>
           )}
         </div>

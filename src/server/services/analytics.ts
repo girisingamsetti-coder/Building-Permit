@@ -16,6 +16,7 @@ import { CLOSED_SHORTFALL_STATUSES, TERMINAL_STATUSES } from '@/lib/constants';
  */
 const CLOSED = [...CLOSED_SHORTFALL_STATUSES] as ShortfallStatus[];
 import { STAGE_LABELS } from '@/lib/workflow';
+import { memoizeAsync } from '@/server/cache/memoize';
 
 /**
  * EVERY NUMBER ON EVERY DASHBOARD COMES FROM HERE.
@@ -395,7 +396,7 @@ export async function shortfallSummary(user: AuthUser): Promise<ShortfallSummary
     status: { notIn: CLOSED },
   };
 
-  const [statusGroups, kindGroups, modeGroups, stageGroups, awaitingReview, neverNotified, overdue] =
+  const [statusGroups, kindGroups, modeGroups, stageGroups, overdue] =
     await Promise.all([
       prisma.shortfall.groupBy({ by: ['status'], where, _count: { _all: true } }),
       prisma.shortfall.groupBy({ by: ['kind'], where: openWhere, _count: { _all: true } }),
@@ -405,12 +406,6 @@ export async function shortfallSummary(user: AuthUser): Promise<ShortfallSummary
         where: openWhere,
         _count: { _all: true },
       }),
-      prisma.shortfall.count({
-        where: { ...where, status: { in: ['RESOLUTION_SUBMITTED', 'UNDER_REVIEW'] } },
-      }),
-      // RAISED means the decision was recorded and nobody was told. It is kept
-      // apart from NOTIFIED precisely so this can be counted.
-      prisma.shortfall.count({ where: { ...where, status: 'RAISED' } }),
       prisma.shortfall.count({
         where: {
           ...where,
@@ -422,6 +417,9 @@ export async function shortfallSummary(user: AuthUser): Promise<ShortfallSummary
 
   const byStatus: Record<string, number> = {};
   for (const row of statusGroups) byStatus[row.status] = row._count._all;
+
+  const awaitingReview = (byStatus.RESOLUTION_SUBMITTED ?? 0) + (byStatus.UNDER_REVIEW ?? 0);
+  const neverNotified = byStatus.RAISED ?? 0;
 
   const byKind: Record<string, number> = {};
   for (const row of kindGroups) byKind[row.kind] = row._count._all;
@@ -708,20 +706,22 @@ export type DashboardData = {
 
 /** One round trip's worth of parallel queries, for the executive dashboards. */
 export async function dashboardData(user: AuthUser, options: { months?: number } = {}): Promise<DashboardData> {
-  const [applications, finance, scrutiny, documents, shortfalls, sla, trend, activity, load] =
-    await Promise.all([
-      applicationOverview(user),
-      financeSummary(user),
-      scrutinySummary(user),
-      documentSummary(user),
-      shortfallSummary(user),
-      slaSummary(user),
-      applicationTrend(user, options.months ?? 9),
-      recentActivity(user, 12),
-      workload(user),
-    ]);
+  return memoizeAsync(`analytics:dashboard:${user.id}:${user.roleKeys.join(',')}:${options.months ?? 9}`, 15, async () => {
+    const [applications, finance, scrutiny, documents, shortfalls, sla, trend, activity, load] =
+      await Promise.all([
+        applicationOverview(user),
+        financeSummary(user),
+        scrutinySummary(user),
+        documentSummary(user),
+        shortfallSummary(user),
+        slaSummary(user),
+        applicationTrend(user, options.months ?? 9),
+        recentActivity(user, 12),
+        workload(user),
+      ]);
 
-  return { applications, finance, scrutiny, documents, shortfalls, sla, trend, activity, workload: load };
+    return { applications, finance, scrutiny, documents, shortfalls, sla, trend, activity, workload: load };
+  });
 }
 
 export { OPEN_SHORTFALL_STATUSES };
@@ -1083,12 +1083,14 @@ export type ConsolidatedView = {
  * for four more aggregate queries to display nothing would be a poor trade.
  */
 export async function consolidatedView(user: AuthUser): Promise<ConsolidatedView> {
-  const [desks, applicantSide, filers, accounts] = await Promise.all([
-    deskConsolidation(user),
-    applicantSideSummary(user),
-    filerBreakdown(user, 10),
-    accountSummary(),
-  ]);
+  return memoizeAsync(`analytics:consolidated:${user.id}`, 15, async () => {
+    const [desks, applicantSide, filers, accounts] = await Promise.all([
+      deskConsolidation(user),
+      applicantSideSummary(user),
+      filerBreakdown(user, 10),
+      accountSummary(),
+    ]);
 
-  return { desks, applicantSide, filers, accounts };
+    return { desks, applicantSide, filers, accounts };
+  });
 }

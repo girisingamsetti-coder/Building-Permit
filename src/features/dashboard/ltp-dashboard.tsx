@@ -4,18 +4,16 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
+import { ArrowRight } from 'lucide-react';
 import {
-  FileText,
-  FilePlus2,
-  AlertTriangle,
-  CreditCard,
-  ClipboardCheck,
-  Clock,
-  CheckCircle2,
-  CircleX,
-  CircleCheck,
-  ArrowRight,
-} from 'lucide-react';
+  Icon3DStack,
+  Icon3DFileEdit,
+  Icon3DCircleSlash,
+  Icon3DShieldCheck,
+  Icon3DActivity,
+  Icon3DAlertOctagon,
+  Icon3DCircleDollar,
+} from '@/components/ui/icons-3d';
 import { KpiCard } from '@/components/common/kpi-card';
 import { DataTable } from '@/components/common/data-table';
 import { EmptyState } from '@/components/common/empty-state';
@@ -33,26 +31,18 @@ import type { ActivityEntry } from '@/server/services/analytics';
 import { ActivityFeed, Panel } from './panels';
 
 /**
- * The LTP dashboard.
- *
- * Every number here is REAL and every tile is a link. The two go together: a
- * tile that cannot be opened is a number the user has to take on trust, and a
- * tile that opens a list counting something different is worse than no tile.
- * Both read src/lib/application-buckets.ts, so the count and the list it links
- * to are the same predicate by construction — `?bucket=paymentPending` is
- * literally what the tile counted.
+ * The LTP dashboard with 3D icons.
  */
-
 const ICONS: Record<BucketKey, React.ComponentType<{ className?: string }>> = {
-  total: FileText,
-  draft: FilePlus2,
-  scrutinyFailed: CircleX,
-  scrutinyPassed: CircleCheck,
-  documentsPending: ClipboardCheck,
-  paymentPending: CreditCard,
-  underReview: Clock,
-  shortfall: AlertTriangle,
-  approved: CheckCircle2,
+  total: Icon3DStack,
+  draft: Icon3DFileEdit,
+  scrutinyFailed: Icon3DCircleSlash,
+  scrutinyPassed: Icon3DShieldCheck,
+  documentsPending: Icon3DStack,
+  paymentPending: Icon3DCircleDollar,
+  underReview: Icon3DActivity,
+  shortfall: Icon3DAlertOctagon,
+  approved: Icon3DShieldCheck,
 };
 
 export function LtpDashboard({

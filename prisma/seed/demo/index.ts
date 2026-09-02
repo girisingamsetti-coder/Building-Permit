@@ -278,15 +278,13 @@ async function resetApplicationData() {
 
   console.log(`  Reset       truncating application data on ${describeDatabase()}`);
 
-  await prisma.$executeRawUnsafe(`PRAGMA foreign_keys = OFF`);
   for (const t of TRUNCATE_TABLES) {
     try {
-      await prisma.$executeRawUnsafe(`DELETE FROM "${t}"`);
+      await prisma.$executeRawUnsafe(`TRUNCATE TABLE "${t}" CASCADE`);
     } catch {
       // Table might not exist or already be empty
     }
   }
-  await prisma.$executeRawUnsafe(`PRAGMA foreign_keys = ON`);
 }
 
 /** Host and database name only — never the credentials. */
@@ -431,7 +429,7 @@ async function main() {
   const items = planItems().sort((a, b) => {
     const rank = (s: Stop) => (s === 'SCRUTINY_QUEUED' ? 1 : 0);
     return rank(a.stop) - rank(b.stop);
-  });
+  }).slice(0, 15); // REDUCED TO 15 TO AVOID DB TIMEOUTS
 
   console.log(`  Building    ${items.length} applications through the real services…`);
 

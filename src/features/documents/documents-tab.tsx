@@ -103,88 +103,123 @@ export function DocumentsTab({
   const extra = entries.filter((e) => !e.isRequired);
 
   return (
-    <div className="space-y-4">
-      <CompletionBanner data={data} />
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="space-y-4">
+        <CompletionBanner data={data} />
 
-      {!uploadAllowed && data.uploadBlockedReason && (
-        <div className="flex items-start gap-2 rounded border border-border bg-surface-sunk px-3 py-2.5">
-          <Lock className="mt-0.5 size-4 shrink-0 text-text-subtle" />
-          <p className="text-small text-text-muted">{data.uploadBlockedReason}</p>
-        </div>
-      )}
+        {!uploadAllowed && data.uploadBlockedReason && (
+          <div className="flex items-start gap-2 rounded border border-border bg-surface-sunk px-3 py-2.5">
+            <Lock className="mt-0.5 size-4 shrink-0 text-text-subtle" />
+            <p className="text-small text-text-muted">{data.uploadBlockedReason}</p>
+          </div>
+        )}
 
-      <ChecklistCard
-        title="Required documents"
-        description={
-          data.requiresVerification
-            ? 'Each of these must be uploaded and verified before the fee can be generated.'
-            : 'Each of these must be uploaded before the fee can be generated.'
-        }
-        entries={required}
-        empty="This application type requires no supporting documents."
-        {...{ data, uploadAllowed, canVerify, expanded, setExpanded, setUploading, setVerifying }}
-      />
-
-      {optional.length > 0 && (
         <ChecklistCard
-          title="Optional documents"
-          description="Attach these if you have them. They never hold up a fee."
-          entries={optional}
-          empty=""
+          title="Required documents"
+          description={
+            data.requiresVerification
+              ? 'Each of these must be uploaded and verified before the fee can be generated.'
+              : 'Each of these must be uploaded before the fee can be generated.'
+          }
+          entries={required}
+          empty="This application type requires no supporting documents."
           {...{ data, uploadAllowed, canVerify, expanded, setExpanded, setUploading, setVerifying }}
         />
-      )}
 
-      {extra.length > 0 && (
-        <ChecklistCard
-          title="Also uploaded"
-          description="No longer required for this application, and kept on the record."
-          entries={extra}
-          empty=""
-          {...{ data, uploadAllowed, canVerify, expanded, setExpanded, setUploading, setVerifying }}
+        {optional.length > 0 && (
+          <ChecklistCard
+            title="Optional documents"
+            description="Attach these if you have them. They never hold up a fee."
+            entries={optional}
+            empty=""
+            {...{ data, uploadAllowed, canVerify, expanded, setExpanded, setUploading, setVerifying }}
+          />
+        )}
+
+        {extra.length > 0 && (
+          <ChecklistCard
+            title="Also uploaded"
+            description="No longer required for this application, and kept on the record."
+            entries={extra}
+            empty=""
+            {...{ data, uploadAllowed, canVerify, expanded, setExpanded, setUploading, setVerifying }}
+          />
+        )}
+
+        {/* ── Upload ─────────────────────────────────────────────────────── */}
+        <Dialog open={uploading !== null} onOpenChange={(open) => !open && setUploading(null)}>
+          <DialogContent className="sm:max-w-xl">
+            {uploading && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>
+                    {uploading.currentVersionNo > 0 ? 'Replace' : 'Upload'} {uploading.name}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {uploading.currentVersionNo > 0
+                      ? `This becomes version ${uploading.currentVersionNo + 1}. Version ${uploading.currentVersionNo} is kept and marked superseded.`
+                      : uploading.description}
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogBody>
+                  <DocumentUpload
+                    applicationId={data.application.id}
+                    entry={uploading}
+                    onUploaded={() => {
+                      setUploading(null);
+                      void refresh();
+                    }}
+                    onCancel={() => setUploading(null)}
+                  />
+                </DialogBody>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Verify ─────────────────────────────────────────────────────── */}
+        <VerifyDialog
+          entry={verifying}
+          onClose={() => setVerifying(null)}
+          onDone={() => {
+            setVerifying(null);
+            void refresh();
+          }}
         />
-      )}
+      </div>
 
-      {/* ── Upload ─────────────────────────────────────────────────────── */}
-      <Dialog open={uploading !== null} onOpenChange={(open) => !open && setUploading(null)}>
-        <DialogContent className="sm:max-w-xl">
-          {uploading && (
-            <>
-              <DialogHeader>
-                <DialogTitle>
-                  {uploading.currentVersionNo > 0 ? 'Replace' : 'Upload'} {uploading.name}
-                </DialogTitle>
-                <DialogDescription>
-                  {uploading.currentVersionNo > 0
-                    ? `This becomes version ${uploading.currentVersionNo + 1}. Version ${uploading.currentVersionNo} is kept and marked superseded.`
-                    : uploading.description}
-                </DialogDescription>
-              </DialogHeader>
-              <DialogBody>
-                <DocumentUpload
-                  applicationId={data.application.id}
-                  entry={uploading}
-                  onUploaded={() => {
-                    setUploading(null);
-                    void refresh();
-                  }}
-                  onCancel={() => setUploading(null)}
-                />
-              </DialogBody>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Verify ─────────────────────────────────────────────────────── */}
-      <VerifyDialog
-        entry={verifying}
-        onClose={() => setVerifying(null)}
-        onDone={() => {
-          setVerifying(null);
-          void refresh();
-        }}
-      />
+      <div className="space-y-4">
+        <Card className="lg:sticky lg:top-4 lg:self-start">
+          <CardHeader>
+            <CardTitle>Required List</CardTitle>
+            <CardDescription>Documents needed for this application.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const originalRequired = data.entries.filter((e) => e.isRequired && e.isMandatory);
+              return originalRequired.length > 0 ? (
+                <ul className="space-y-3">
+                  {originalRequired.map((doc) => (
+                    <li key={doc.documentTypeId} className="flex items-start gap-2 text-small">
+                      {doc.satisfied ? (
+                        <Check className="mt-0.5 size-4 shrink-0 text-success" />
+                      ) : (
+                        <div className="mt-1 size-3 shrink-0 rounded-full border border-danger bg-danger/10" />
+                      )}
+                      <span className={cn(doc.satisfied ? "text-success font-medium" : "text-danger font-medium")}>
+                        {doc.name}
+                        {!doc.satisfied && <span className="ml-1 text-danger font-normal">(Pending)</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-small text-text-muted">No documents required.</p>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

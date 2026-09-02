@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 const FEATURED = [
   {
-    email: 'admin.demo@example.com',
+    email: 'super.demo@example.com',
     label: 'Super Admin',
     role: 'Full Access',
     icon: Crown,
@@ -45,6 +45,7 @@ const ACCOUNTS: Array<{ email: string; label: string; group: string }> = [
   { email: 'director.demo@example.com', label: 'Director (DP) — Lakshmi Rao', group: 'Executive' },
   { email: 'addlcommissioner.demo@example.com', label: 'Addl Commissioner — Vikram Singh', group: 'Executive' },
   { email: 'commissioner.demo@example.com', label: 'Commissioner — Deepa Menon', group: 'Executive' },
+  { email: 'finance.demo@example.com', label: 'Finance Officer — Rajesh Gupta', group: 'Support' },
   { email: 'admin.demo@example.com', label: 'System Admin', group: 'Support' },
   { email: 'super.demo@example.com', label: 'Super Admin (All Access)', group: 'Support' },
   { email: 'viewer.demo@example.com', label: 'Viewer / Auditor', group: 'Support' },
@@ -106,7 +107,7 @@ export function DemoAccountPicker({
           aria-expanded={open}
           className="flex w-full items-center justify-between text-caption font-medium text-text-muted hover:text-text focus-visible:outline-none"
         >
-          <span>More officer stations (12 roles)</span>
+          <span>More officer stations (13 roles)</span>
           <ChevronDown className={cn('size-3.5 transition-transform duration-200', open && 'rotate-180')} />
         </button>
 

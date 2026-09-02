@@ -460,7 +460,7 @@ export async function createApplication(user: AuthUser, input: CreateApplication
     });
 
     return app;
-  });
+  }, { timeout: 30000 });
 
   return shapeDetail(created);
 }
@@ -783,7 +783,7 @@ export async function submitApplication(user: AuthUser, id: string, meta: Meta) 
     });
 
     return tx.application.findFirstOrThrow({ where: { id: app.id }, include: DETAIL_INCLUDE });
-  });
+  }, { timeout: 30000 });
 
   return shapeDetail(updated);
 }
