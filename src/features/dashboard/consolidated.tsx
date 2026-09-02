@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn, formatRelativeTime } from '@/lib/utils';
 import type { ConsolidatedView } from '@/server/services/analytics';
 import { Panel, StatRow } from './panels';
-import { BarList, type Tone } from './charts';
+import { BarList, DonutChart, type Tone } from './charts';
 
 /**
  * THE WHOLE SYSTEM, FROM ONE LOGIN.
@@ -344,28 +344,18 @@ export function PipelineStrip({
       title="The pipeline, end to end"
       description="Where every file is, from the applicant's desk to the Commissioner's. Each file is counted exactly once."
     >
-      <div className="grid gap-x-6 sm:grid-cols-2 lg:grid-cols-4">
-        <StatRow
-          label="With the applicant"
-          value={withApplicant}
-          hint="Drafting, correcting, paying, answering"
-        />
-        <StatRow
-          label="At a departmental desk"
-          value={inReview}
-          hint="Across every review stage"
-          tone="info"
-        />
-        <StatRow
-          label="Closed"
-          value={closed}
-          hint={`${approved} approved · ${rejected} rejected`}
-          tone="success"
-        />
-        <StatRow label="Total" value={total} hint="Every live application" />
-      </div>
+      <DonutChart
+        slices={[
+          { key: 'applicant', label: 'With the applicant', value: withApplicant, tone: 'neutral' },
+          { key: 'desk', label: 'At a departmental desk', value: inReview, tone: 'info' },
+          { key: 'closed', label: 'Closed', value: closed, tone: 'success' },
+        ]}
+        total={total}
+        totalLabel="Total Files"
+        className="mb-6 mt-2"
+      />
 
-      <div className="mt-4 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-4 pt-6 border-t border-border">
         <StatRow
           label="Unclaimed at a desk"
           value={review.reduce((sum, d) => sum + d.unclaimed, 0)}
