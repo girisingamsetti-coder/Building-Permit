@@ -13,6 +13,8 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 
+import { ThemeToggle } from './theme-toggle';
+
 export type ShellUser = {
   name: string;
   email: string;
@@ -93,6 +95,7 @@ export function AppShell({
             <div className="ml-auto flex items-center gap-2 sm:gap-3">
               <GlobalSearch />
               <NotificationBell />
+              <ThemeToggle />
               <ProfileMenu name={user.name} email={user.email} roleNames={user.roleNames} />
             </div>
           </header>
