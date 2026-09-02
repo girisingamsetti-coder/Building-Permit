@@ -117,23 +117,27 @@ export function DonutChart({
   totalLabel,
   height = 200,
   className,
+  showEmptyInLegend,
 }: {
   slices: Slice[];
   total?: number;
   totalLabel?: string;
   height?: number;
   className?: string;
+  showEmptyInLegend?: boolean;
 }) {
   const shown = slices.filter((s) => s.value > 0);
   const sum = total ?? shown.reduce((acc, s) => acc + s.value, 0);
 
-  if (!shown.length) {
+  if (!shown.length && !showEmptyInLegend) {
     return (
       <p className={cn('py-8 text-center text-small text-text-subtle', className)}>
         Nothing to chart yet.
       </p>
     );
   }
+
+  const legendSlices = showEmptyInLegend ? slices : shown;
 
   return (
     <div className={cn('flex flex-col gap-4 sm:flex-row sm:items-center', className)}>
@@ -173,8 +177,8 @@ export function DonutChart({
         </div>
       </div>
 
-      <ul className="min-w-0 flex-1 space-y-1.5">
-        {shown.map((slice) => (
+      <ul className="min-w-0 w-full flex-1 space-y-1.5">
+        {legendSlices.map((slice) => (
           <li key={slice.key} className="flex items-baseline gap-2 text-small">
             <span
               className="size-2 shrink-0 translate-y-[-1px] rounded-sm"

@@ -352,7 +352,8 @@ export function PipelineStrip({
         ]}
         total={total}
         totalLabel="Total Files"
-        className="mb-6 mt-2 !flex-col !items-center"
+        className="mt-2 !flex-col !items-center"
+        showEmptyInLegend
       />
 
     </Panel>
