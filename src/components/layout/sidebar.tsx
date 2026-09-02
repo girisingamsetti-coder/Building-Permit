@@ -31,12 +31,12 @@ export function Sidebar({
     <nav
       aria-label="Main"
       className={cn(
-        'flex h-full flex-col bg-[#063970] text-white shadow-xl',
+        'flex h-full flex-col bg-gradient-to-b from-[#0f172a] via-[#1e1b4b] to-[#042f2e] text-white shadow-xl',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
       <div className={cn('flex h-16 items-center gap-3 border-b border-white/20 px-4', collapsed && 'justify-center px-0')}>
-        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-[#063970] shadow-sm overflow-hidden">
+        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-[#0f172a] shadow-sm overflow-hidden">
           <img src="/logo.jpg" alt="Nirman Logo" className="size-full object-cover" />
         </div>
         {!collapsed && (

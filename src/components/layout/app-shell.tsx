@@ -12,7 +12,6 @@ import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-import { QuickPersonaSwitcher } from './quick-persona-switcher';
 
 export type ShellUser = {
   name: string;
@@ -93,7 +92,6 @@ export function AppShell({
 
             <div className="ml-auto flex items-center gap-2 sm:gap-3">
               <GlobalSearch />
-              <QuickPersonaSwitcher currentEmail={user.email} />
               <NotificationBell />
               <ProfileMenu name={user.name} email={user.email} roleNames={user.roleNames} />
             </div>
