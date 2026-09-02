@@ -48,7 +48,7 @@ function filterKey(prefix: string, filters: ReportFilters): string {
 }
 
 export async function getExecutiveDashboardMetrics(filters: ReportFilters) {
-  return memoizeAsync(filterKey('reports:executive-metrics', filters), 20, async () => {
+  return memoizeAsync(filterKey('reports:executive-metrics', filters), 120, async () => {
     const where = buildWhere(filters);
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -114,7 +114,7 @@ export async function getExecutiveDashboardMetrics(filters: ReportFilters) {
 }
 
 export async function getApplicationTrend(filters: ReportFilters) {
-  return memoizeAsync(filterKey('reports:app-trend', filters), 20, async () => {
+  return memoizeAsync(filterKey('reports:app-trend', filters), 120, async () => {
     const results = await db.$queryRawUnsafe<Array<{ date: Date; count: bigint }>>(`
       SELECT DATE_TRUNC('day', "createdAt") as date, COUNT(id) as count
       FROM "applications"
@@ -132,7 +132,7 @@ export async function getApplicationTrend(filters: ReportFilters) {
 }
 
 export async function getStatusDistribution(filters: ReportFilters) {
-  return memoizeAsync(filterKey('reports:status-dist', filters), 20, async () => {
+  return memoizeAsync(filterKey('reports:status-dist', filters), 120, async () => {
     const grouped = await db.application.groupBy({
       by: ['status'],
       where: buildWhere(filters),
@@ -147,7 +147,7 @@ export async function getStatusDistribution(filters: ReportFilters) {
 }
 
 export async function getOfficerWorkload(filters: ReportFilters) {
-  return memoizeAsync(filterKey('reports:officer-workload', filters), 20, async () => {
+  return memoizeAsync(filterKey('reports:officer-workload', filters), 120, async () => {
     const users = await db.user.findMany({
       where: {
         tasks: { some: { status: { in: ['PENDING', 'IN_PROGRESS'] } } },

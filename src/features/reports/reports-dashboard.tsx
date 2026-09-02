@@ -46,16 +46,16 @@ export function ReportsDashboard({ initialData }: { initialData: any }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Total Applications" value={data.metrics.totalApplications} icon={Layers} />
-        <KpiCard title="New This Month" value={data.metrics.newThisMonth} icon={Sparkles} />
-        <KpiCard title="Pending" value={data.metrics.pending} icon={Activity} />
-        <KpiCard title="Approved" value={data.metrics.approved} icon={ShieldCheck} />
-        <KpiCard title="Rejected" value={data.metrics.rejected} icon={CircleSlash} />
-        <KpiCard title="Shortfall" value={data.metrics.shortfall} icon={AlertOctagon} />
-        <KpiCard title="Fees Generated" value={`₹${data.metrics.feesGenerated.toLocaleString('en-IN')}`} icon={Coins} />
-        <KpiCard title="Fees Collected" value={`₹${data.metrics.feesCollected.toLocaleString('en-IN')}`} icon={Landmark} />
-        <KpiCard title="Avg Processing Time" value={`${data.metrics.averageProcessingTime} days`} icon={Gauge} />
-        <KpiCard title="SLA Breach %" value={`${data.metrics.slaBreachPercent}%`} icon={Hourglass} />
+        <KpiCard title="Total Applications" value={data.metrics.totalApplications} icon={Icon3DStack} />
+        <KpiCard title="New This Month" value={data.metrics.newThisMonth} icon={Icon3DSparkles} />
+        <KpiCard title="Pending" value={data.metrics.pending} icon={Icon3DActivity} />
+        <KpiCard title="Approved" value={data.metrics.approved} icon={Icon3DShieldCheck} />
+        <KpiCard title="Rejected" value={data.metrics.rejected} icon={Icon3DCircleSlash} />
+        <KpiCard title="Shortfall" value={data.metrics.shortfall} icon={Icon3DAlertOctagon} />
+        <KpiCard title="Fees Generated" value={`₹${data.metrics.feesGenerated.toLocaleString('en-IN')}`} icon={Icon3DCoins} />
+        <KpiCard title="Fees Collected" value={`₹${data.metrics.feesCollected.toLocaleString('en-IN')}`} icon={Icon3DLandmark} />
+        <KpiCard title="Avg Processing Time" value={`${data.metrics.averageProcessingTime} days`} icon={Icon3DGauge} />
+        <KpiCard title="SLA Breach %" value={`${data.metrics.slaBreachPercent}%`} icon={Icon3DHourglass} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

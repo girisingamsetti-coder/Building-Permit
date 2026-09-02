@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { prisma } from '@/server/db/prisma';
 import { forbidden, unauthorized } from '@/server/http/errors';
 import { CITYWIDE_ROLES, ROLES, type Capability, type RoleKey } from '@/lib/constants';
@@ -35,8 +36,12 @@ export type AuthUser = {
  * are re-read from the database on every request, so suspending an account or
  * changing its role takes effect on the next request rather than whenever the
  * token happens to expire.
+ *
+ * Wrapped with React.cache() so that the portal layout and the page both
+ * calling requirePageUser() resolve the same promise, not two. This removes
+ * 4-5 redundant database queries on every page navigation.
  */
-export async function getAuthUser(): Promise<AuthUser | null> {
+export const getAuthUser = cache(async function getAuthUser(): Promise<AuthUser | null> {
   const claims = await readAccessClaims();
   if (!claims) return null;
 
@@ -84,7 +89,7 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     officeId: user.officeId,
     sessionId: claims.sid,
   };
-}
+});
 
 /** As getAuthUser, but throws the 401 the route wrapper turns into JSON. */
 export async function requireAuthUser(): Promise<AuthUser> {

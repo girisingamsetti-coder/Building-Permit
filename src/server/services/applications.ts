@@ -965,12 +965,12 @@ function buildListWhere(user: AuthUser, query: ApplicationListQuery): Prisma.App
     const q = query.q;
     and.push({
       OR: [
-        { applicationNumber: { contains: q } },
-        { applicant: { name: { contains: q } } },
+        { applicationNumber: { contains: q, mode: 'insensitive' } },
+        { applicant: { name: { contains: q, mode: 'insensitive' } } },
         { applicant: { phone: { contains: q } } },
-        { property: { surveyNumbers: { contains: q } } },
-        { property: { localityName: { contains: q } } },
-        { property: { plotNo: { contains: q } } },
+        { property: { surveyNumbers: { contains: q, mode: 'insensitive' } } },
+        { property: { localityName: { contains: q, mode: 'insensitive' } } },
+        { property: { plotNo: { contains: q, mode: 'insensitive' } } },
       ],
     });
   }

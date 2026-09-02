@@ -1,3 +1,11 @@
 {
-  "regions": ["sin1"]
+  "regions": ["sin1"],
+  "functions": {
+    "src/app/**/*.ts": {
+      "maxDuration": 30
+    },
+    "src/app/**/*.tsx": {
+      "maxDuration": 30
+    }
+  }
 }

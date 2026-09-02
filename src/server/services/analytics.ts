@@ -471,33 +471,29 @@ export async function slaSummary(user: AuthUser): Promise<SlaSummary> {
     task: { instance: { application: liveApplications(user) } },
   } satisfies Prisma.SlaInstanceWhereInput;
 
-  const [groups, applicationsOverdue, closed] = await Promise.all([
+  // Compute averageDaysToClose in SQL instead of loading all closed applications
+  // into memory. The previous implementation did findMany on every closed file.
+  const [groups, applicationsOverdue, avgResult] = await Promise.all([
     prisma.slaInstance.groupBy({
       by: ['status'],
       where: { ...taskScoped, completedAt: null },
       _count: { _all: true },
     }),
     prisma.application.count({ where: { ...liveApplications(user), slaStatus: 'OVERDUE' } }),
-    prisma.application.findMany({
-      where: {
-        ...liveApplications(user),
-        status: { in: ['APPROVED', 'REJECTED'] },
-        submittedAt: { not: null },
-      },
-      select: { submittedAt: true, approvedAt: true, rejectedAt: true },
-    }),
+    prisma.$queryRaw<Array<{ avg_days: number | null }>>`
+      SELECT ROUND(AVG(
+        EXTRACT(EPOCH FROM (COALESCE("approvedAt", "rejectedAt") - "submittedAt")) / 86400.0
+      )::numeric, 1) as avg_days
+      FROM "applications"
+      WHERE "deletedAt" IS NULL
+        AND "status" IN ('APPROVED', 'REJECTED')
+        AND "submittedAt" IS NOT NULL
+        AND COALESCE("approvedAt", "rejectedAt") IS NOT NULL
+    `,
   ]);
 
   const byStatus: Record<string, number> = {};
   for (const row of groups) byStatus[row.status] = row._count._all;
-
-  const spans = closed
-    .map((a) => {
-      const end = a.approvedAt ?? a.rejectedAt;
-      if (!a.submittedAt || !end) return null;
-      return (end.getTime() - a.submittedAt.getTime()) / 86_400_000;
-    })
-    .filter((d): d is number => d !== null && d >= 0);
 
   return {
     onTrack: byStatus.ON_TRACK ?? 0,
@@ -505,8 +501,8 @@ export async function slaSummary(user: AuthUser): Promise<SlaSummary> {
     overdue: byStatus.OVERDUE ?? 0,
     paused: byStatus.PAUSED ?? 0,
     applicationsOverdue,
-    averageDaysToClose: spans.length
-      ? Math.round((spans.reduce((a, b) => a + b, 0) / spans.length) * 10) / 10
+    averageDaysToClose: avgResult[0]?.avg_days != null
+      ? Number(avgResult[0]!.avg_days)
       : null,
   };
 }
@@ -539,49 +535,51 @@ export async function applicationTrend(user: AuthUser, months = 9): Promise<Tren
   from.setHours(0, 0, 0, 0);
   from.setMonth(from.getMonth() - (months - 1));
 
-  const rows = await prisma.application.findMany({
-    where: {
-      ...liveApplications(user),
-      OR: [
-        { createdAt: { gte: from } },
-        { submittedAt: { gte: from } },
-        { approvedAt: { gte: from } },
-        { rejectedAt: { gte: from } },
-      ],
-    },
-    select: { createdAt: true, submittedAt: true, approvedAt: true, rejectedAt: true },
-  });
+  // Use SQL aggregation instead of loading all rows into memory.
+  // The previous implementation loaded every application from the last N months
+  // then counted them in JavaScript — which works at 70 and does not at 7000.
+  const [created, submitted, approved, rejected] = await Promise.all([
+    prisma.$queryRaw<Array<{ period: string; count: bigint }>>`
+      SELECT TO_CHAR(DATE_TRUNC('month', "createdAt"), 'YYYY-MM-DD') as period, COUNT(*) as count
+      FROM "applications" WHERE "deletedAt" IS NULL AND "createdAt" >= ${from}
+      GROUP BY DATE_TRUNC('month', "createdAt") ORDER BY period`,
+    prisma.$queryRaw<Array<{ period: string; count: bigint }>>`
+      SELECT TO_CHAR(DATE_TRUNC('month', "submittedAt"), 'YYYY-MM-DD') as period, COUNT(*) as count
+      FROM "applications" WHERE "deletedAt" IS NULL AND "submittedAt" >= ${from}
+      GROUP BY DATE_TRUNC('month', "submittedAt") ORDER BY period`,
+    prisma.$queryRaw<Array<{ period: string; count: bigint }>>`
+      SELECT TO_CHAR(DATE_TRUNC('month', "approvedAt"), 'YYYY-MM-DD') as period, COUNT(*) as count
+      FROM "applications" WHERE "deletedAt" IS NULL AND "approvedAt" >= ${from}
+      GROUP BY DATE_TRUNC('month', "approvedAt") ORDER BY period`,
+    prisma.$queryRaw<Array<{ period: string; count: bigint }>>`
+      SELECT TO_CHAR(DATE_TRUNC('month', "rejectedAt"), 'YYYY-MM-DD') as period, COUNT(*) as count
+      FROM "applications" WHERE "deletedAt" IS NULL AND "rejectedAt" >= ${from}
+      GROUP BY DATE_TRUNC('month', "rejectedAt") ORDER BY period`,
+  ]);
 
-  const buckets = new Map<string, TrendPoint>();
+  const toMap = (rows: Array<{ period: string; count: bigint }>) =>
+    new Map(rows.map((r) => [r.period, Number(r.count)]));
+  const createdMap = toMap(created);
+  const submittedMap = toMap(submitted);
+  const approvedMap = toMap(approved);
+  const rejectedMap = toMap(rejected);
 
+  const result: TrendPoint[] = [];
   for (let i = 0; i < months; i += 1) {
     const date = new Date(from);
     date.setMonth(from.getMonth() + i);
     const key = monthKey(date);
-    buckets.set(key, {
+    result.push({
       period: key,
       label: date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
-      created: 0,
-      submitted: 0,
-      approved: 0,
-      rejected: 0,
+      created: createdMap.get(key) ?? 0,
+      submitted: submittedMap.get(key) ?? 0,
+      approved: approvedMap.get(key) ?? 0,
+      rejected: rejectedMap.get(key) ?? 0,
     });
   }
 
-  const bump = (date: Date | null, field: 'created' | 'submitted' | 'approved' | 'rejected') => {
-    if (!date) return;
-    const bucket = buckets.get(monthKey(date));
-    if (bucket) bucket[field] += 1;
-  };
-
-  for (const row of rows) {
-    bump(row.createdAt, 'created');
-    bump(row.submittedAt, 'submitted');
-    bump(row.approvedAt, 'approved');
-    bump(row.rejectedAt, 'rejected');
-  }
-
-  return [...buckets.values()];
+  return result;
 }
 
 const monthKey = (date: Date): string =>
@@ -706,7 +704,7 @@ export type DashboardData = {
 
 /** One round trip's worth of parallel queries, for the executive dashboards. */
 export async function dashboardData(user: AuthUser, options: { months?: number } = {}): Promise<DashboardData> {
-  return memoizeAsync(`analytics:dashboard:${user.id}:${user.roleKeys.join(',')}:${options.months ?? 9}`, 15, async () => {
+  return memoizeAsync(`analytics:dashboard:${user.id}:${user.roleKeys.join(',')}:${options.months ?? 9}`, 60, async () => {
     const [applications, finance, scrutiny, documents, shortfalls, sla, trend, activity, load] =
       await Promise.all([
         applicationOverview(user),
@@ -952,45 +950,72 @@ export type FilerRow = {
 };
 
 export async function filerBreakdown(user: AuthUser, limit = 12): Promise<FilerRow[]> {
-  const scoped = liveApplications(user);
-
+  // Use aggregation instead of loading ALL applications per user into memory.
+  // The previous implementation did a nested select that loaded every application
+  // row for every user, then counted in JS — an unbounded memory load.
   const rows = await prisma.user.findMany({
-    where: { deletedAt: null, applications: { some: scoped } },
+    where: { deletedAt: null, applications: { some: liveApplications(user) } },
     select: {
       id: true,
       name: true,
       firmName: true,
       ltpLicenceNo: true,
-      applications: {
-        where: scoped,
-        select: { status: true, openShortfalls: true, submittedAt: true },
+      _count: {
+        select: {
+          applications: { where: liveApplications(user) },
+        },
       },
     },
+    orderBy: { applications: { _count: 'desc' } },
+    take: limit,
   });
 
-  return rows
-    .map((row) => {
-      const apps = row.applications;
-      const filed = apps
-        .map((a) => a.submittedAt)
-        .filter((d): d is Date => d !== null)
-        .sort((a, b) => b.getTime() - a.getTime());
+  // For the small result set (≤ limit), fetch the breakdowns with targeted queries
+  if (rows.length === 0) return [];
+  const userIds = rows.map((r) => r.id);
 
-      return {
-        userId: row.id,
-        name: row.name,
-        firmName: row.firmName,
-        licenceNo: row.ltpLicenceNo,
-        total: apps.length,
-        drafts: apps.filter((a) => a.status === 'DRAFT').length,
-        approved: apps.filter((a) => a.status === 'APPROVED').length,
-        rejected: apps.filter((a) => a.status === 'REJECTED').length,
-        openShortfalls: apps.reduce((sum, a) => sum + a.openShortfalls, 0),
-        lastFiledAt: filed[0]?.toISOString() ?? null,
-      };
-    })
-    .sort((a, b) => b.total - a.total)
-    .slice(0, limit);
+  const [statusGroups, shortfallSums, lastFiled] = await Promise.all([
+    prisma.application.groupBy({
+      by: ['ltpUserId', 'status'],
+      where: { ...liveApplications(user), ltpUserId: { in: userIds } },
+      _count: { _all: true },
+    }),
+    prisma.application.groupBy({
+      by: ['ltpUserId'],
+      where: { ...liveApplications(user), ltpUserId: { in: userIds }, openShortfalls: { gt: 0 } },
+      _sum: { openShortfalls: true },
+    }),
+    prisma.application.groupBy({
+      by: ['ltpUserId'],
+      where: { ...liveApplications(user), ltpUserId: { in: userIds }, submittedAt: { not: null } },
+      _max: { submittedAt: true },
+    }),
+  ]);
+
+  const statusByUser = new Map<string, Map<string, number>>();
+  for (const row of statusGroups) {
+    const map = statusByUser.get(row.ltpUserId) ?? new Map();
+    map.set(row.status, row._count._all);
+    statusByUser.set(row.ltpUserId, map);
+  }
+  const shortfallByUser = new Map(shortfallSums.map((r) => [r.ltpUserId, r._sum.openShortfalls ?? 0]));
+  const lastFiledByUser = new Map(lastFiled.map((r) => [r.ltpUserId, r._max.submittedAt]));
+
+  return rows.map((row) => {
+    const statuses = statusByUser.get(row.id) ?? new Map();
+    return {
+      userId: row.id,
+      name: row.name,
+      firmName: row.firmName,
+      licenceNo: row.ltpLicenceNo,
+      total: row._count.applications,
+      drafts: statuses.get('DRAFT') ?? 0,
+      approved: statuses.get('APPROVED') ?? 0,
+      rejected: statuses.get('REJECTED') ?? 0,
+      openShortfalls: shortfallByUser.get(row.id) ?? 0,
+      lastFiledAt: lastFiledByUser.get(row.id)?.toISOString() ?? null,
+    };
+  });
 }
 
 /**
@@ -1083,7 +1108,7 @@ export type ConsolidatedView = {
  * for four more aggregate queries to display nothing would be a poor trade.
  */
 export async function consolidatedView(user: AuthUser): Promise<ConsolidatedView> {
-  return memoizeAsync(`analytics:consolidated:${user.id}`, 15, async () => {
+  return memoizeAsync(`analytics:consolidated:${user.id}`, 60, async () => {
     const [desks, applicantSide, filers, accounts] = await Promise.all([
       deskConsolidation(user),
       applicantSideSummary(user),

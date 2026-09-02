@@ -38,7 +38,7 @@ const schema = z.object({
   APP_NAME: z.string().default('Nirman'),
   ORG_SHORT_NAME: z.string().default('Nirman'),
 
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required').default('postgresql://postgres.bunfbgaxbueririehybw:Digitaltwin%405678@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=10&pool_timeout=20'),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required').default('postgresql://postgres.bunfbgaxbueririehybw:Digitaltwin%405678@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=20&pool_timeout=30'),
   DIRECT_URL: optional,
 
   AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters').default('dev-only-secret-change-me-at-least-32-chars-long'),

@@ -2,12 +2,12 @@
 
 import { Button } from '@/components/ui/button';
 import { FileSpreadsheet } from 'lucide-react';
-import * as XLSX from 'xlsx';
 
 export function ExportButton({ data, disabled }: { data: any, disabled?: boolean }) {
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!data?.metrics) return;
 
+    const XLSX = await import('xlsx');
     // Create a comprehensive workbook with multiple sheets
     const wb = XLSX.utils.book_new();
 

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {
   FileText,
   AlertTriangle,
@@ -289,7 +290,6 @@ function ShortfallsByStage({ data }: { data: DashboardData }) {
  */
 export function AdminDashboard({
   data,
-  counts,
   consolidated,
   activity,
 }: {

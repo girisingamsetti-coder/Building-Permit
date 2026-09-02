@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, FilePlus2 } from 'lucide-react';
 import {
   Icon3DStack,
   Icon3DFileEdit,

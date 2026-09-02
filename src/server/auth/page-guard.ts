@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/server/db/prisma';
 import { getAuthUser, can, type AuthUser } from './context';
@@ -19,8 +20,13 @@ import type { Capability } from '@/lib/constants';
 
 export type PageUser = AuthUser & { roleNames: string[] };
 
-/** Resolves the user or redirects to sign in. */
-export async function requirePageUser(): Promise<PageUser> {
+/**
+ * Resolves the user or redirects to sign in.
+ *
+ * Wrapped with React.cache() so that the portal layout and the page
+ * receive the same resolved object without a second round of DB queries.
+ */
+export const requirePageUser = cache(async function requirePageUser(): Promise<PageUser> {
   const user = await getAuthUser();
   if (!user) redirect('/login');
 
@@ -30,7 +36,7 @@ export async function requirePageUser(): Promise<PageUser> {
   });
 
   return { ...user, roleNames: roles.map((r) => r.name) };
-}
+});
 
 /**
  * Resolves the user and asserts a capability, or sends them to /unauthorized.
