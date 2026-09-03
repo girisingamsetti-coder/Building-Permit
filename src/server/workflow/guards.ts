@@ -36,6 +36,8 @@ export type GuardContext = {
   };
   /** What the actor supplied with the action. */
   input: { remarks: string; attachments: unknown[] };
+  /** Per-request cache to prevent redundant evaluations of the same guard. */
+  cache?: Record<string, GuardResult>;
 };
 
 export type GuardResult = { passed: boolean; message: string };
@@ -265,11 +267,16 @@ export const guardNames = (): string[] => Object.keys(REGISTRY).sort();
  * of "I do not know whether this is allowed" is "no".
  */
 export async function evaluateGuard(name: string, ctx: GuardContext): Promise<GuardResult> {
+  if (ctx.cache && ctx.cache[name]) return ctx.cache[name];
+
   const guard = REGISTRY[name];
   if (!guard) {
     return no(`This action is configured with an unknown condition (${name}) and cannot be performed.`);
   }
-  return guard(ctx);
+  
+  const result = await guard(ctx);
+  if (ctx.cache) ctx.cache[name] = result;
+  return result;
 }
 
 export type GuardEvaluation = { name: string; passed: boolean; message: string };

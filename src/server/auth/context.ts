@@ -1,5 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { prisma } from '@/server/db/prisma';
 import { forbidden, unauthorized } from '@/server/http/errors';
 import { CITYWIDE_ROLES, ROLES, type Capability, type RoleKey } from '@/lib/constants';
@@ -41,54 +42,83 @@ export type AuthUser = {
  * calling requirePageUser() resolve the same promise, not two. This removes
  * 4-5 redundant database queries on every page navigation.
  */
+
+const fetchUserFromDb = unstable_cache(
+  async (userId: string, sessionId: string) => {
+    const [user, session] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          deletedAt: true,
+          status: true,
+          primaryZoneId: true,
+          officeId: true,
+          jurisdictions: { select: { zoneId: true } },
+          roles: {
+            select: {
+              role: {
+                select: {
+                  key: true,
+                  permissions: {
+                    select: {
+                      permission: { select: { key: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.session.findUnique({
+        where: { id: sessionId },
+        select: { revokedAt: true, expiresAt: true, absoluteUntil: true, userId: true },
+      }),
+    ]);
+
+    if (!user || user.deletedAt || user.status !== 'ACTIVE') return null;
+
+    // A revoked or expired session invalidates any token minted from it.
+    const now = new Date();
+    if (!session || session.userId !== user.id) return null;
+    if (session.revokedAt || session.expiresAt < now || session.absoluteUntil < now) return null;
+
+    const roleKeys = user.roles.map((r) => r.role.key as RoleKey);
+
+    const capabilities = [
+      ...new Set(user.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.key))),
+    ];
+
+    const zoneIds = [
+      ...new Set([
+        ...(user.primaryZoneId ? [user.primaryZoneId] : []),
+        ...user.jurisdictions.map((j) => j.zoneId),
+      ]),
+    ];
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      roleKeys,
+      capabilities,
+      zoneIds,
+      officeId: user.officeId,
+      sessionId,
+    };
+  },
+  ['auth-user-db'],
+  { tags: ['auth'], revalidate: 60 }
+);
+
 export const getAuthUser = cache(async function getAuthUser(): Promise<AuthUser | null> {
   const claims = await readAccessClaims();
   if (!claims) return null;
 
-  const [user, session] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: claims.sub },
-      include: {
-        roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
-        jurisdictions: { select: { zoneId: true } },
-      },
-    }),
-    prisma.session.findUnique({
-      where: { id: claims.sid },
-      select: { revokedAt: true, expiresAt: true, absoluteUntil: true, userId: true },
-    }),
-  ]);
-
-  if (!user || user.deletedAt || user.status !== 'ACTIVE') return null;
-
-  // A revoked or expired session invalidates any token minted from it.
-  const now = new Date();
-  if (!session || session.userId !== user.id) return null;
-  if (session.revokedAt || session.expiresAt < now || session.absoluteUntil < now) return null;
-
-  const roleKeys = user.roles.map((r) => r.role.key as RoleKey);
-
-  const capabilities = [
-    ...new Set(user.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.key))),
-  ];
-
-  const zoneIds = [
-    ...new Set([
-      ...(user.primaryZoneId ? [user.primaryZoneId] : []),
-      ...user.jurisdictions.map((j) => j.zoneId),
-    ]),
-  ];
-
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    roleKeys,
-    capabilities,
-    zoneIds,
-    officeId: user.officeId,
-    sessionId: claims.sid,
-  };
+  return fetchUserFromDb(claims.sub, claims.sid);
 });
 
 /** As getAuthUser, but throws the 401 the route wrapper turns into JSON. */

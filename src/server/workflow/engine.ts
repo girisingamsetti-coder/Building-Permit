@@ -1,4 +1,5 @@
 import 'server-only';
+import { unstable_cache, revalidateTag } from 'next/cache';
 import type { Prisma, ApplicationStatus } from '@prisma/client';
 import { prisma, type Tx } from '@/server/db/prisma';
 import { can, type AuthUser } from '@/server/auth/context';
@@ -305,118 +306,126 @@ export type WorkflowState = {
  * nothing inside it.
  */
 export async function getWorkflowState(user: AuthUser, applicationId: string): Promise<WorkflowState> {
-  await assertApplicationAccess(user, applicationId);
+const fetchWorkflowState = unstable_cache(
+  async (user: AuthUser, applicationId: string) => {
+    return prisma.$transaction(async (tx) => {
+      const application = await tx.application.findFirstOrThrow({
+        where: { id: applicationId, deletedAt: null },
+        select: APPLICATION_SELECT,
+      });
 
-  return prisma.$transaction(async (tx) => {
-    const application = await tx.application.findFirstOrThrow({
-      where: { id: applicationId, deletedAt: null },
-      select: APPLICATION_SELECT,
-    });
+      const instance = await tx.workflowInstance.findUnique({
+        where: { applicationId },
+        select: {
+          id: true,
+          workflowId: true,
+          status: true,
+          startedAt: true,
+          completedAt: true,
+          currentStageId: true,
+          parkedStageId: true,
+        },
+      });
 
-    const instance = await tx.workflowInstance.findUnique({
-      where: { applicationId },
-      select: {
-        id: true,
-        workflowId: true,
-        status: true,
-        startedAt: true,
-        completedAt: true,
-        currentStageId: true,
-        parkedStageId: true,
-      },
-    });
+      if (!instance) {
+        return {
+          application: {
+            id: application.id,
+            applicationNumber: application.applicationNumber,
+            status: application.status,
+          },
+          instance: null,
+          stage: null,
+          task: null,
+          actions: [],
+          sequence: 0,
+        } satisfies WorkflowState;
+      }
 
-    if (!instance) {
+      const [stage, parked, task, last] = await Promise.all([
+        instance.currentStageId
+          ? tx.workflowStage.findUnique({ where: { id: instance.currentStageId }, select: STAGE_SELECT })
+          : null,
+        instance.parkedStageId
+          ? tx.workflowStage.findUnique({ where: { id: instance.parkedStageId }, select: { code: true } })
+          : null,
+        tx.workflowTask.findFirst({
+          where: { instanceId: instance.id, status: { in: ['PENDING', 'IN_PROGRESS'] } },
+          select: {
+            id: true,
+            status: true,
+            assignedRoleKey: true,
+            assignedUserId: true,
+            receivedAt: true,
+            claimedAt: true,
+            priority: true,
+            assignee: { select: { name: true } },
+            stage: { select: { ownerRoleKeys: true } },
+            sla: { select: { dueAt: true, status: true } },
+          },
+        }),
+        tx.workflowHistory.findFirst({
+          where: { instanceId: instance.id },
+          orderBy: { sequence: 'desc' },
+          select: { sequence: true },
+        }),
+      ]);
+
+      const actions = stage
+        ? await buildActions(tx, user, application, instance, stage)
+        : [];
+
       return {
         application: {
           id: application.id,
           applicationNumber: application.applicationNumber,
           status: application.status,
         },
-        instance: null,
-        stage: null,
-        task: null,
-        actions: [],
-        sequence: 0,
-      } satisfies WorkflowState;
-    }
-
-    const [stage, parked, task, last] = await Promise.all([
-      instance.currentStageId
-        ? tx.workflowStage.findUnique({ where: { id: instance.currentStageId }, select: STAGE_SELECT })
-        : null,
-      instance.parkedStageId
-        ? tx.workflowStage.findUnique({ where: { id: instance.parkedStageId }, select: { code: true } })
-        : null,
-      tx.workflowTask.findFirst({
-        where: { instanceId: instance.id, status: { in: ['PENDING', 'IN_PROGRESS'] } },
-        select: {
-          id: true,
-          status: true,
-          assignedRoleKey: true,
-          assignedUserId: true,
-          receivedAt: true,
-          claimedAt: true,
-          priority: true,
-          assignee: { select: { name: true } },
-          stage: { select: { ownerRoleKeys: true } },
-          sla: { select: { dueAt: true, status: true } },
+        instance: {
+          id: instance.id,
+          status: instance.status,
+          startedAt: instance.startedAt,
+          completedAt: instance.completedAt,
+          parkedStageCode: parked?.code ?? null,
         },
-      }),
-      tx.workflowHistory.findFirst({
-        where: { instanceId: instance.id },
-        orderBy: { sequence: 'desc' },
-        select: { sequence: true },
-      }),
-    ]);
+        stage: stage
+          ? {
+              code: stage.code,
+              name: stage.name,
+              type: stage.type,
+              sequence: stage.sequence,
+              isTerminal: stage.isTerminal,
+            }
+          : null,
+        task: task
+          ? {
+              id: task.id,
+              status: task.status,
+              assignedRoleKey: task.assignedRoleKey,
+              assignedUserId: task.assignedUserId,
+              assignedUserName: task.assignee?.name ?? '',
+              receivedAt: task.receivedAt,
+              claimedAt: task.claimedAt,
+              priority: task.priority,
+              dueAt: task.sla?.dueAt ?? null,
+              slaStatus: task.sla?.status ?? null,
+              mine:
+                Array.isArray(task.stage.ownerRoleKeys) &&
+                (task.stage.ownerRoleKeys as string[]).some((role) => user.roleKeys.includes(role as never)),
+            }
+          : null,
+        actions,
+        sequence: last?.sequence ?? 0,
+      } satisfies WorkflowState;
+    });
+  },
+  ['workflow-state-db'],
+  { tags: ['workflow'], revalidate: 60 }
+);
 
-    const actions = stage
-      ? await buildActions(tx, user, application, instance, stage)
-      : [];
-
-    return {
-      application: {
-        id: application.id,
-        applicationNumber: application.applicationNumber,
-        status: application.status,
-      },
-      instance: {
-        id: instance.id,
-        status: instance.status,
-        startedAt: instance.startedAt,
-        completedAt: instance.completedAt,
-        parkedStageCode: parked?.code ?? null,
-      },
-      stage: stage
-        ? {
-            code: stage.code,
-            name: stage.name,
-            type: stage.type,
-            sequence: stage.sequence,
-            isTerminal: stage.isTerminal,
-          }
-        : null,
-      task: task
-        ? {
-            id: task.id,
-            status: task.status,
-            assignedRoleKey: task.assignedRoleKey,
-            assignedUserId: task.assignedUserId,
-            assignedUserName: task.assignee?.name ?? '',
-            receivedAt: task.receivedAt,
-            claimedAt: task.claimedAt,
-            priority: task.priority,
-            dueAt: task.sla?.dueAt ?? null,
-            slaStatus: task.sla?.status ?? null,
-            mine:
-              Array.isArray(task.stage.ownerRoleKeys) &&
-              (task.stage.ownerRoleKeys as string[]).some((role) => user.roleKeys.includes(role as never)),
-          }
-        : null,
-      actions,
-      sequence: last?.sequence ?? 0,
-    } satisfies WorkflowState;
-  });
+export async function getWorkflowState(user: AuthUser, applicationId: string): Promise<WorkflowState> {
+  await assertApplicationAccess(user, applicationId);
+  return fetchWorkflowState(user, applicationId);
 }
 
 /** Resolves and evaluates every action this user could take at this stage. */
@@ -429,6 +438,7 @@ async function buildActions(
 ): Promise<ActionOption[]> {
   const transitions = await transitionsFrom(tx, instance.workflowId, stage.id, application.status);
   const options: ActionOption[] = [];
+  const cache: Record<string, import('./guards').GuardResult> = {};
 
   for (const transition of transitions) {
     // A SYSTEM action is raised by the system and never offered to anybody.
@@ -442,6 +452,7 @@ async function buildActions(
       tx,
       application,
       input: { remarks: '', attachments: [] },
+      cache,
     });
 
     const failing = guards.filter((g) => !g.passed);
@@ -519,7 +530,7 @@ export async function performAction(
 ): Promise<ActionResult> {
   await assertApplicationAccess(user, applicationId);
 
-  return prisma.$transaction(
+  const result = await prisma.$transaction(
     async (tx) => {
       // The lock. Taken before anything is read, so every read below sees a
       // state no other transition can be changing.
@@ -583,6 +594,10 @@ export async function performAction(
     // spending a few seconds to avoid.
     { timeout: 20_000 }
   );
+
+  // Invalidate the cache now that the workflow state has mutated
+  revalidateTag('workflow');
+  return result;
 }
 
 type ExecuteInput = {

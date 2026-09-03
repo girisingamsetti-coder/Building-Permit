@@ -42,7 +42,18 @@ export async function signIn(email: string, password: string, meta: RequestMeta)
 
   const user = await prisma.user.findUnique({
     where: { email: normalised },
-    include: { roles: { include: { role: true } } },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      passwordHash: true,
+      status: true,
+      deletedAt: true,
+      lockedUntil: true,
+      failedLoginCount: true,
+      mustChangePassword: true,
+      roles: { select: { role: { select: { key: true } } } },
+    },
   });
 
   // Timing: a missing user would otherwise return noticeably faster than a

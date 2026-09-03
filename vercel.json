@@ -1,5 +1,5 @@
 {
-  "regions": ["sin1"],
+  "regions": ["iad1"],
   "functions": {
     "src/app/**/*.ts": {
       "maxDuration": 30
