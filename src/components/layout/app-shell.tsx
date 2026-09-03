@@ -14,7 +14,32 @@ import { cn } from '@/lib/utils';
 
 
 import { ThemeToggle } from './theme-toggle';
+import { Sparkles } from 'lucide-react';
+import { useDashboardSettings } from '@/contexts/dashboard-settings-context';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
+function DashboardToggle() {
+  const { isOutlineEnhanced, toggleOutlineEnhanced } = useDashboardSettings();
+  
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleOutlineEnhanced}
+          className={cn(isOutlineEnhanced && "text-primary bg-primary/10")}
+          aria-label="Toggle enhanced dashboard view"
+        >
+          <Sparkles className="size-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        {isOutlineEnhanced ? "Disable enhanced outlines" : "Enable enhanced outlines"}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 export type ShellUser = {
   name: string;
   email: string;
@@ -93,6 +118,7 @@ export function AppShell({
             </div>
 
             <div className="ml-auto flex items-center gap-2 sm:gap-3">
+              <DashboardToggle />
               <GlobalSearch />
               <NotificationBell />
               <ThemeToggle />

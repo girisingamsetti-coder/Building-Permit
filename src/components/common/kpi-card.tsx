@@ -1,7 +1,10 @@
+'use client';
+
 import * as React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDashboardSettings } from '@/contexts/dashboard-settings-context';
 
 export type KpiCardTone =
   | 'neutral' | 'info' | 'success' | 'warning' | 'danger'
@@ -28,6 +31,8 @@ export function KpiCard({
   loading?: boolean;
   icon?: React.ComponentType<{ className?: string; size?: number | string }>;
 }) {
+  const { isOutlineEnhanced } = useDashboardSettings();
+
   const outerWrapper: Record<KpiCardTone, string> = {
     neutral: 'bg-gradient-to-br from-gray-200 via-gray-200/50 to-[#06B6D4]/50',
     info: 'bg-gradient-to-br from-gray-200 via-gray-200/50 to-[#3B82F6]/50',
@@ -95,6 +100,27 @@ export function KpiCard({
     else if (trendValue.startsWith('-')) trendBg = 'bg-[#FEE2E2] text-[#DC2626]';
   }
 
+  // The custom gradient classes for the fading outline effect (top-left to transparent)
+  const fadingOutlineMap: Record<KpiCardTone, string> = {
+    neutral: 'bg-gradient-to-br from-[#06B6D4] via-[#06B6D4]/20 to-transparent',
+    info: 'bg-gradient-to-br from-[#3B82F6] via-[#3B82F6]/20 to-transparent',
+    success: 'bg-gradient-to-br from-[#22C55E] via-[#22C55E]/20 to-transparent',
+    warning: 'bg-gradient-to-br from-[#F59E0B] via-[#F59E0B]/20 to-transparent',
+    danger: 'bg-gradient-to-br from-[#A66FE4] via-[#A66FE4]/20 to-transparent',
+    cyan: 'bg-gradient-to-br from-[#06B6D4] via-[#06B6D4]/20 to-transparent',
+    blue: 'bg-gradient-to-br from-[#3B82F6] via-[#3B82F6]/20 to-transparent',
+    emerald: 'bg-gradient-to-br from-[#10B981] via-[#10B981]/20 to-transparent',
+    rose: 'bg-gradient-to-br from-[#F43F5E] via-[#F43F5E]/20 to-transparent',
+    amber: 'bg-gradient-to-br from-[#F59E0B] via-[#F59E0B]/20 to-transparent',
+    red: 'bg-gradient-to-br from-[#EF4444] via-[#EF4444]/20 to-transparent',
+    orange: 'bg-gradient-to-br from-[#F97316] via-[#F97316]/20 to-transparent',
+    indigo: 'bg-gradient-to-br from-[#6366F1] via-[#6366F1]/20 to-transparent',
+    violet: 'bg-gradient-to-br from-[#8B5CF6] via-[#8B5CF6]/20 to-transparent',
+    green: 'bg-gradient-to-br from-[#22C55E] via-[#22C55E]/20 to-transparent',
+    fuchsia: 'bg-gradient-to-br from-[#D946EF] via-[#D946EF]/20 to-transparent',
+    teal: 'bg-gradient-to-br from-[#14B8A6] via-[#14B8A6]/20 to-transparent',
+  };
+
   const body = (
     <div
       className={cn(
@@ -103,7 +129,21 @@ export function KpiCard({
         href && 'cursor-pointer'
       )}
     >
-      <div className={cn("flex h-full flex-col justify-between rounded-[19px] p-5", innerBg[tone])}>
+      {isOutlineEnhanced && (
+        <div 
+          className={cn(
+            "absolute inset-0 rounded-[20px] pointer-events-none",
+            fadingOutlineMap[tone]
+          )}
+          style={{
+            padding: '1px',
+            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            WebkitMaskComposite: 'xor',
+            maskComposite: 'exclude'
+          }}
+        />
+      )}
+      <div className={cn("flex h-full flex-col justify-between rounded-[19px] p-5 relative z-10", innerBg[tone])}>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="truncate text-[13px] font-extrabold tracking-wide text-[#737373]">

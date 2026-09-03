@@ -2,6 +2,7 @@ import { requirePageUser } from '@/server/auth/page-guard';
 import { env } from '@/server/config/env';
 import { AppShell } from '@/components/layout/app-shell';
 import { Toaster } from '@/components/ui/toast';
+import { DashboardSettingsProvider } from '@/contexts/dashboard-settings-context';
 
 /**
  * Every page under (portal) is authenticated, because this layout resolves the
@@ -12,7 +13,7 @@ export default async function PortalLayout({ children }: { children: React.React
   const user = await requirePageUser();
 
   return (
-    <>
+    <DashboardSettingsProvider>
       <AppShell
         user={{
           name: user.name,
@@ -25,6 +26,6 @@ export default async function PortalLayout({ children }: { children: React.React
         {children}
       </AppShell>
       <Toaster />
-    </>
+    </DashboardSettingsProvider>
   );
 }
