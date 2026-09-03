@@ -595,7 +595,11 @@ export async function performAction(
   );
 
   // Invalidate the cache now that the workflow state has mutated
-  revalidateTag('workflow');
+  try {
+    revalidateTag('workflow');
+  } catch (e) {
+    // Ignore caching errors when running outside Next.js (e.g., seeding)
+  }
   return result;
 }
 
