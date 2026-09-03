@@ -63,7 +63,7 @@ export function GlobalSearch() {
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search applications, files, applicants..."
+        placeholder="search here"
         aria-label="Search applications"
         className={cn(
           'h-9 w-full rounded-lg border border-border/80 bg-surface-sunk/60 pl-8 pr-12 text-small text-text shadow-inner transition-all',
