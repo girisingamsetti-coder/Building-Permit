@@ -28,7 +28,7 @@ export const SURNAMES = [
 
 /** Districts used as plausible addresses. */
 export const DISTRICTS = [
-  { name: 'NTR', mandals: ['Thullur', 'Mangalagiri', 'Tadepalle', 'Amaravati'] },
+  { name: 'Amaravati, Andhra Pradesh', mandals: ['Thullur', 'Mangalagiri', 'Tadepalle', 'Amaravati'] },
 ] as const;
 
 export const LOCALITIES = [

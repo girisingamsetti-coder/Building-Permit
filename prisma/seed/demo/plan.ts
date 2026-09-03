@@ -96,7 +96,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'SUBMITTED',
-    count: 8,
+    count: 7,
     landsOn: 'SUBMITTED',
     stageCode: null,
     ageDays: [4, 28],
@@ -104,7 +104,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'DRAWING_UPLOADED',
-    count: 6,
+    count: 5,
     landsOn: 'DRAWING_UPLOADED',
     stageCode: null,
     ageDays: [6, 35],
@@ -120,7 +120,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'SCRUTINY_FAILED',
-    count: 6,
+    count: 5,
     landsOn: 'SCRUTINY_FAILED',
     stageCode: null,
     ageDays: [8, 45],
@@ -144,7 +144,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'DOCUMENTS_PARTIAL',
-    count: 6,
+    count: 5,
     landsOn: 'DOCUMENT_UPLOAD_PENDING',
     stageCode: null,
     ageDays: [12, 55],
@@ -160,7 +160,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'FEE_GENERATED',
-    count: 6,
+    count: 5,
     landsOn: 'FEE_GENERATED',
     stageCode: null,
     ageDays: [15, 65],
@@ -176,7 +176,7 @@ export const PLAN: PlanEntry[] = [
   },
   {
     stop: 'PAYMENT_FAILED',
-    count: 6,
+    count: 5,
     landsOn: 'PAYMENT_FAILED',
     stageCode: null,
     ageDays: [3, 30],
@@ -186,7 +186,7 @@ export const PLAN: PlanEntry[] = [
   // ── Departmental side: 35 ─────────────────────────────────────────────
   {
     stop: 'TPA_UNCLAIMED',
-    count: 6,
+    count: 5,
     landsOn: 'PENDING_TPA',
     stageCode: 'TPA_REVIEW',
     ageDays: [20, 75],
