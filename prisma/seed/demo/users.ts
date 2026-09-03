@@ -131,14 +131,19 @@ export const DEMO_STAFF: DemoStaff[] = [
  * its single role, re-sync its jurisdictions.
  */
 export async function seedDemoStaff(prisma: PrismaClient, demoPassword: string) {
+  console.log('hashing password...');
   const passwordHash = await hashPassword(demoPassword);
+  console.log('password hashed.');
 
   let created = 0;
   let updated = 0;
 
   for (const staff of DEMO_STAFF) {
+    console.log('processing staff:', staff.email);
     const office = await prisma.office.findUniqueOrThrow({ where: { code: staff.officeCode } });
+    console.log('found office:', office.code);
     const role = await prisma.role.findUniqueOrThrow({ where: { key: staff.role } });
+    console.log('found role:', role.key);
 
     const primaryZoneId = staff.zoneCodes[0]
       ? (await prisma.zone.findUniqueOrThrow({ where: { code: staff.zoneCodes[0] } })).id

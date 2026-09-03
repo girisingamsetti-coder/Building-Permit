@@ -58,9 +58,11 @@ export async function audit(db: Db, input: AuditInput) {
 
 async function append(db: Tx, input: AuditInput) {
   // A hash-chained audit log requires strictly sequential writes.
-  // Instead of a retry loop (which aborts the parent Postgres transaction on P2002),
-  // we take a transaction-level advisory lock to serialize audit writes safely.
-  await db.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(13371338)`);
+  // In production, we take a transaction-level advisory lock to serialize audit writes safely.
+  // During demo seeding, we bypass it to avoid P2028 transaction timeouts.
+  if (process.env.LAMS_ALLOW_DEMO_RESET !== '1') {
+    await db.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(13371338)`);
+  }
 
   const prev = await db.auditLog.findFirst({
     orderBy: { seq: 'desc' },

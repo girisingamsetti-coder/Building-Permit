@@ -957,7 +957,7 @@ export async function uploadDocument(user: AuthUser, input: UploadDocumentInput,
     const reconciled = await reconcileDocumentStatus(tx, app.id, user);
 
     return { documentId: document.id, version, versionNo, status: reconciled };
-  });
+  }, { timeout: 30000, maxWait: 30000 });
 
   return result;
 }

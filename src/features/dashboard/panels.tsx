@@ -184,37 +184,39 @@ export function ActivityFeed({
  */
 export function WorkloadTable({ rows }: { rows: WorkloadRow[] }) {
   if (!rows.length) {
-    return <p className="py-6 text-center text-small text-text-subtle">No open work.</p>;
+    return <p className="py-4 text-center text-small text-text-subtle">No open work.</p>;
   }
 
   const max = Math.max(...rows.map((r) => r.open));
 
   return (
-    <ul className="space-y-2.5">
-      {rows.map((row) => (
-        <li key={row.userId ?? row.name}>
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="flex min-w-0 items-baseline gap-2">
-              <span className={cn('truncate text-small', row.userId ? 'text-text' : 'italic text-text-muted')}>
-                {row.name}
+    <div className="max-h-[286px] overflow-y-auto pr-1">
+      <ul className="space-y-1.5">
+        {rows.map((row) => (
+          <li key={row.userId ?? row.name} className="rounded p-1 -m-0.5 hover:bg-surface-hover/60 transition-colors">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="flex min-w-0 items-baseline gap-1.5">
+                <span className={cn('truncate text-caption font-medium', row.userId ? 'text-text' : 'italic text-text-muted')}>
+                  {row.name}
+                </span>
+                <span className="shrink-0 font-mono text-[10px] text-text-subtle">
+                  ({row.roleKey})
+                </span>
               </span>
-              <span className="shrink-0 text-caption uppercase tracking-wide text-text-subtle">
-                {row.roleKey}
+              <span className="flex shrink-0 items-center gap-1.5">
+                {row.overdue > 0 && <Badge tone="danger" className="px-1 py-0 text-[10px]">{row.overdue} overdue</Badge>}
+                <span className="text-caption font-semibold tabular-nums text-text">{row.open}</span>
               </span>
-            </span>
-            <span className="flex shrink-0 items-center gap-2">
-              {row.overdue > 0 && <Badge tone="danger">{row.overdue} overdue</Badge>}
-              <span className="text-small font-medium tabular-nums text-text">{row.open}</span>
-            </span>
-          </div>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-sm bg-surface-sunk">
-            <div
-              className={cn('h-full rounded-sm', row.userId ? 'bg-primary' : 'bg-border-strong')}
-              style={{ width: `${Math.max(2, (row.open / max) * 100)}%` }}
-            />
-          </div>
-        </li>
-      ))}
-    </ul>
+            </div>
+            <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-sunk">
+              <div
+                className={cn('h-full rounded-full transition-all duration-300', row.userId ? 'bg-primary' : 'bg-border-strong')}
+                style={{ width: `${Math.max(2, (row.open / max) * 100)}%` }}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

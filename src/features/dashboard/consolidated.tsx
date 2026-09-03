@@ -43,87 +43,80 @@ export function DeskConsolidation({ desks }: { desks: ConsolidatedView['desks'] 
       action={{ href: '/tasks', label: 'Open queue' }}
       bodyClassName="p-0"
     >
-      <div className="overflow-x-auto">
+      <div className="max-h-[286px] overflow-y-auto overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Desk</TableHead>
-              <TableHead>Worked by</TableHead>
-              <TableHead className="text-right">Files here</TableHead>
-              <TableHead className="text-right">Open tasks</TableHead>
-              <TableHead className="text-right">Unclaimed</TableHead>
-              <TableHead className="text-right">Due soon</TableHead>
-              <TableHead className="text-right">Overdue</TableHead>
-              <TableHead className="text-right">Shortfalls</TableHead>
-              <TableHead className="text-right">Avg wait</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-caption">Desk</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-caption">Worked by</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Files</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Tasks</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Unclaimed</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Due soon</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Overdue</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Shortfalls</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Avg wait</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {working.map((desk) => (
-              <TableRow key={desk.stageCode}>
-                <TableCell>
+              <TableRow key={desk.stageCode} className="hover:bg-primary-subtle/20">
+                <TableCell className="px-2.5 py-1 text-caption">
                   <Link
                     href={`/applications?stage=${desk.stageCode}`}
-                    className="text-small font-medium text-text hover:text-primary hover:underline"
+                    className="font-medium text-text hover:text-primary hover:underline"
                   >
                     {desk.label}
                   </Link>
-                  <p className="font-mono text-caption text-text-subtle">{desk.stageCode}</p>
+                  <span className="ml-1 font-mono text-[10px] text-text-subtle">({desk.stageCode})</span>
                 </TableCell>
 
-                <TableCell>
+                <TableCell className="px-2.5 py-1 text-caption">
                   <div className="flex flex-wrap items-center gap-1">
                     {desk.roleKeys.length ? (
                       desk.roleKeys.map((role) => (
-                        <Badge key={role} tone="outline">
+                        <Badge key={role} tone="outline" className="px-1 py-0 text-[10px]">
                           {role}
                         </Badge>
                       ))
                     ) : (
                       <span className="text-caption text-text-subtle">—</span>
                     )}
+                    <span className="text-[10px] text-text-subtle">
+                      ({desk.officers} {desk.officers === 1 ? 'officer' : 'officers'})
+                    </span>
                   </div>
-                  {desk.roleKeys.length > 0 && desk.officers === 0 ? (
-                    <p className="mt-0.5 text-caption text-danger">No active account holds this role</p>
-                  ) : (
-                    <p className="mt-0.5 text-caption text-text-subtle">
-                      {desk.officers} active officer{desk.officers === 1 ? '' : 's'}
-                    </p>
-                  )}
                 </TableCell>
 
-                <TableCell className="text-right tabular-nums font-semibold">{desk.applications}</TableCell>
-                <TableCell className="text-right tabular-nums">{desk.openTasks || '—'}</TableCell>
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption font-semibold">{desk.applications}</TableCell>
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption">{desk.openTasks || '—'}</TableCell>
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption">{desk.unclaimed || '—'}</TableCell>
 
-                <TableCell className="text-right tabular-nums">
-                  {desk.unclaimed || '—'}
-                </TableCell>
-
-                <TableCell className="text-right">
+                <TableCell className="px-2.5 py-1 text-right text-caption">
                   {desk.dueSoon ? (
-                    <Badge tone="warning">{desk.dueSoon}</Badge>
+                    <Badge tone="warning" className="px-1 py-0 text-[10px]">{desk.dueSoon}</Badge>
                   ) : (
                     <span className="tabular-nums text-text-subtle">—</span>
                   )}
                 </TableCell>
 
-                <TableCell className="text-right">
+                <TableCell className="px-2.5 py-1 text-right text-caption">
                   {desk.overdue ? (
-                    <Badge tone="danger">{desk.overdue}</Badge>
+                    <Badge tone="danger" className="px-1 py-0 text-[10px]">{desk.overdue}</Badge>
                   ) : (
                     <span className="tabular-nums text-text-subtle">—</span>
                   )}
                 </TableCell>
 
-                <TableCell className="text-right">
+                <TableCell className="px-2.5 py-1 text-right text-caption">
                   {desk.openShortfalls ? (
-                    <Badge tone="warning">{desk.openShortfalls}</Badge>
+                    <Badge tone="warning" className="px-1 py-0 text-[10px]">{desk.openShortfalls}</Badge>
                   ) : (
                     <span className="tabular-nums text-text-subtle">—</span>
                   )}
                 </TableCell>
 
-                <TableCell className="text-right tabular-nums text-text-muted">
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption text-text-muted">
                   {desk.averageDaysWaiting === null ? '—' : `${desk.averageDaysWaiting}d`}
                 </TableCell>
               </TableRow>
@@ -181,50 +174,50 @@ export function AccountsPanel({ accounts }: { accounts: ConsolidatedView['accoun
       action={{ href: '/admin/settings/users', label: 'Manage users' }}
       bodyClassName="p-0"
     >
-      <div className="overflow-x-auto">
+      <div className="max-h-[286px] overflow-y-auto overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Role</TableHead>
-              <TableHead className="text-right">Accounts</TableHead>
-              <TableHead className="text-right">Active</TableHead>
-              <TableHead className="text-right">Seen this week</TableHead>
-              <TableHead className="text-right">Never signed in</TableHead>
-              <TableHead className="text-right">Open files</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-caption">Role</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Accounts</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Active</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Seen this week</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Never signed in</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Open files</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {accounts.byRole.map((row) => (
-              <TableRow key={row.roleKey}>
-                <TableCell>
+              <TableRow key={row.roleKey} className="hover:bg-primary-subtle/20">
+                <TableCell className="px-2.5 py-1 text-caption">
                   <Link
                     href={`/admin/settings/users?role=${row.roleKey}`}
-                    className="text-small text-text hover:text-primary hover:underline"
+                    className="text-caption font-medium text-text hover:text-primary hover:underline"
                   >
                     {row.name}
                   </Link>
-                  <p className="font-mono text-caption text-text-subtle">{row.roleKey}</p>
+                  <span className="ml-1.5 font-mono text-[10px] text-text-subtle">({row.roleKey})</span>
                 </TableCell>
-                <TableCell className="text-right tabular-nums">{row.total}</TableCell>
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption">{row.total}</TableCell>
                 <TableCell
                   className={cn(
-                    'text-right tabular-nums',
-                    row.active === 0 && row.total > 0 && 'text-danger'
+                    'px-2.5 py-1 text-right tabular-nums text-caption',
+                    row.active === 0 && row.total > 0 && 'text-danger font-semibold'
                   )}
                 >
                   {row.active}
                 </TableCell>
-                <TableCell className="text-right tabular-nums text-text-muted">
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption text-text-muted">
                   {row.signedInLast7Days || '—'}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="px-2.5 py-1 text-right text-caption">
                   {row.neverSignedIn ? (
-                    <Badge tone="warning">{row.neverSignedIn}</Badge>
+                    <Badge tone="warning" className="px-1 py-0 text-[10px]">{row.neverSignedIn}</Badge>
                   ) : (
                     <span className="tabular-nums text-text-subtle">—</span>
                   )}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">{row.openTasks || '—'}</TableCell>
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption font-medium">{row.openTasks || '—'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -252,51 +245,51 @@ export function FilersPanel({ filers }: { filers: ConsolidatedView['filers'] }) 
       title="Licensed Technical Persons (LTP)"
       bodyClassName="p-0"
     >
-      <div className="overflow-x-auto">
+      <div className="max-h-[286px] overflow-y-auto overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Licensed technical person</TableHead>
-              <TableHead className="text-right">Files</TableHead>
-              <TableHead className="text-right">Drafts</TableHead>
-              <TableHead className="text-right">Approved</TableHead>
-              <TableHead className="text-right">Rejected</TableHead>
-              <TableHead className="text-right">Open shortfalls</TableHead>
-              <TableHead className="text-right">Last filed</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-caption">Licensed technical person</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Files</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Drafts</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Approved</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Rejected</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Open shortfalls</TableHead>
+              <TableHead className="h-7 px-2.5 py-1 text-right text-caption">Last filed</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filers.map((filer) => (
-              <TableRow key={filer.userId}>
-                <TableCell>
+              <TableRow key={filer.userId} className="hover:bg-primary-subtle/20">
+                <TableCell className="px-2.5 py-1 text-caption">
                   <Link
                     href={`/admin/settings/users/${filer.userId}`}
-                    className="text-small text-text hover:text-primary hover:underline"
+                    className="font-medium text-text hover:text-primary hover:underline"
                   >
                     {filer.name}
                   </Link>
-                  <p className="truncate text-caption text-text-subtle">
+                  <span className="ml-1.5 truncate text-[10px] text-text-subtle">
                     {[filer.firmName, filer.licenceNo].filter(Boolean).join(' · ') || '—'}
-                  </p>
+                  </span>
                 </TableCell>
-                <TableCell className="text-right tabular-nums font-medium">{filer.total}</TableCell>
-                <TableCell className="text-right tabular-nums text-text-muted">
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption font-semibold">{filer.total}</TableCell>
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption text-text-muted">
                   {filer.drafts || '—'}
                 </TableCell>
-                <TableCell className="text-right tabular-nums text-success">
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption text-success font-medium">
                   {filer.approved || '—'}
                 </TableCell>
-                <TableCell className="text-right tabular-nums text-text-muted">
+                <TableCell className="px-2.5 py-1 text-right tabular-nums text-caption text-text-muted">
                   {filer.rejected || '—'}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="px-2.5 py-1 text-right text-caption">
                   {filer.openShortfalls ? (
-                    <Badge tone="warning">{filer.openShortfalls}</Badge>
+                    <Badge tone="warning" className="px-1 py-0 text-[10px]">{filer.openShortfalls}</Badge>
                   ) : (
                     <span className="tabular-nums text-text-subtle">—</span>
                   )}
                 </TableCell>
-                <TableCell className="whitespace-nowrap text-right text-caption text-text-muted">
+                <TableCell className="whitespace-nowrap px-2.5 py-1 text-right text-[10px] text-text-muted">
                   {filer.lastFiledAt ? formatRelativeTime(filer.lastFiledAt) : 'Never'}
                 </TableCell>
               </TableRow>
@@ -342,20 +335,21 @@ export function PipelineStrip({
   return (
     <Panel
       title="The pipeline, end to end"
-      className="lg:w-1/4"
+      className="h-full flex flex-col justify-between"
+      bodyClassName="flex flex-col items-center justify-center flex-1"
     >
       <DonutChart
         slices={[
-          { key: 'applicant', label: 'With the applicant', value: withApplicant, tone: 'neutral' },
-          { key: 'desk', label: 'At a departmental desk', value: inReview, tone: 'info' },
+          { key: 'applicant', label: 'With applicant', value: withApplicant, tone: 'neutral' },
+          { key: 'desk', label: 'In review desk', value: inReview, tone: 'info' },
           { key: 'closed', label: 'Closed', value: closed, tone: 'success' },
         ]}
         total={total}
-        totalLabel="Total Files"
-        className="mt-2 !flex-col !items-center"
+        totalLabel="Total"
+        className="!flex-col !items-center w-full"
+        height={130}
         showEmptyInLegend
       />
-
     </Panel>
   );
 }

@@ -176,7 +176,7 @@ export async function requestScrutiny(user: AuthUser, applicationId: string, met
     });
 
     return created;
-  });
+  }, { timeout: 120000, maxWait: 120000 });
 
   return {
     requested: requests.length,

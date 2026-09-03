@@ -15,6 +15,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 /**
@@ -140,8 +141,8 @@ export function DonutChart({
   const legendSlices = showEmptyInLegend ? slices : shown;
 
   return (
-    <div className={cn('flex flex-col gap-4 sm:flex-row sm:items-center', className)}>
-      <div className="relative shrink-0" style={{ width: height, height }}>
+    <div className={cn('flex flex-col sm:flex-row items-center justify-center gap-3 w-full', className)}>
+      <div className="relative shrink-0 flex items-center justify-center my-auto" style={{ width: height, height: height, minWidth: height }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart style={{ outline: 'none' }}>
             <Pie
@@ -226,49 +227,55 @@ export function BarList({
   const shown = rows.filter((r) => r.value > 0);
 
   if (!shown.length) {
-    return <p className={cn('py-6 text-center text-small text-text-subtle', className)}>{emptyLabel}</p>;
+    return (
+      <div className={cn('flex h-full min-h-[160px] items-center justify-center p-6 text-center text-small text-text-subtle', className)}>
+        {emptyLabel}
+      </div>
+    );
   }
 
   return (
-    <div className={cn('h-64 w-full pt-4', className)}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={shown} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgb(var(--border))" />
-          <XAxis 
-            dataKey="label" 
-            tick={{ fontSize: 11, fill: 'rgb(var(--text-subtle))' }} 
-            tickLine={false} 
-            axisLine={false} 
-            dy={8}
-          />
-          <YAxis 
-            tick={{ fontSize: 11, fill: 'rgb(var(--text-subtle))' }} 
-            tickLine={false} 
-            axisLine={false} 
-            dx={-8}
-          />
-          <Tooltip 
-            cursor={{ fill: 'rgba(0,0,0, 0.05)' }}
-            content={({ active, payload }) => {
-              if (active && payload && payload.length) {
-                return (
-                  <div className="rounded border border-border bg-surface px-3 py-2 shadow-sm">
-                    <p className="text-small font-medium text-text">{payload[0]?.payload?.label}</p>
-                    <p className="text-small font-bold text-text-muted mt-0.5">{payload[0]?.value}</p>
-                  </div>
-                );
-              }
-              return null;
-            }}
-          />
-          <Bar dataKey="value" radius={[12, 12, 12, 12]} maxBarSize={24}>
-            {shown.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={TONE_COLOR[entry.tone ?? 'primary']} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <ul className={cn('space-y-2.5 pt-1 w-full', className)}>
+      {shown.map((row) => {
+        const pct = Math.round((row.value / max) * 100);
+        const link = row.href ?? (href ? href(row.key) : undefined);
+        const color = TONE_COLOR[row.tone ?? 'primary'];
+
+        const content = (
+          <div className="group flex flex-col gap-1 w-full">
+            <div className="flex items-center justify-between text-caption">
+              <span className="font-medium text-text truncate max-w-[75%]" title={row.label}>
+                {row.label}
+              </span>
+              <span className="font-semibold tabular-nums text-text shrink-0">
+                {row.value.toLocaleString('en-IN')}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-border/60">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.max(4, pct)}%`,
+                  backgroundColor: color,
+                }}
+              />
+            </div>
+          </div>
+        );
+
+        return (
+          <li key={row.key} className="w-full">
+            {link ? (
+              <Link href={link} className="block rounded p-1 -m-1 transition-colors hover:bg-surface-hover">
+                {content}
+              </Link>
+            ) : (
+              content
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

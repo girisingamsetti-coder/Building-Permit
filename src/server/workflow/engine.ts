@@ -305,7 +305,6 @@ export type WorkflowState = {
  * Read-only: it opens a transaction because the guards take one, and writes
  * nothing inside it.
  */
-export async function getWorkflowState(user: AuthUser, applicationId: string): Promise<WorkflowState> {
 const fetchWorkflowState = unstable_cache(
   async (user: AuthUser, applicationId: string) => {
     return prisma.$transaction(async (tx) => {

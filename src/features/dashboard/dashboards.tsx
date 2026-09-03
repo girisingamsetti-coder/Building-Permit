@@ -129,7 +129,7 @@ const TREND_SERIES = [
 ];
 
 /** Fees and payments, in the four figures a reader asks for in order. */
-function MoneyPanels({ data }: { data: DashboardData }) {
+export function MoneyPanels({ data }: { data: DashboardData }) {
   const { finance } = data;
 
   return (
@@ -188,7 +188,7 @@ function MoneyPanels({ data }: { data: DashboardData }) {
 }
 
 /** Scrutiny and shortfalls, side by side — the two sources of rework. */
-function QualityPanels({ data }: { data: DashboardData }) {
+export function QualityPanels({ data }: { data: DashboardData }) {
   const { scrutiny, shortfalls } = data;
 
   return (
@@ -259,20 +259,135 @@ function QualityPanels({ data }: { data: DashboardData }) {
   );
 }
 
-/** Where the shortfalls were raised — pendency by desk, for a supervisor. */
-function ShortfallsByStage({ data }: { data: DashboardData }) {
+/** Fees and payments, automated scrutiny, and shortfalls in a single 4-card row. */
+export function OperationsPanels({ data }: { data: DashboardData }) {
+  const { finance, scrutiny, shortfalls } = data;
+
   return (
-    <Panel title="Open shortfalls by desk">
-      <BarList
-        emptyLabel="Nothing outstanding at any desk."
-        rows={data.shortfalls.byStage.map((s) => ({
-          key: s.code,
-          label: s.label,
-          value: s.count,
-          tone: 'warning' as Tone,
-        }))}
-      />
-    </Panel>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
+      {/* 1. Fees and collection */}
+      <Panel
+        title="Fees and collection"
+        action={{ href: '/payments', label: 'Register' }}
+        className="h-full flex flex-col justify-between"
+      >
+        <div className="flex-1 flex flex-col justify-between space-y-3">
+          <ProgressBar
+            value={finance.collected}
+            total={finance.generated}
+            tone="success"
+            label="Collected of raised"
+            valueLabel={`${formatMoney(finance.collected)}`}
+          />
+
+          <div className="space-y-1">
+            <StatRow
+              label="Demands issued"
+              value={finance.demandsIssued}
+              hint={finance.shortfallDemands ? `${finance.shortfallDemands} shortfall` : undefined}
+            />
+            <StatRow
+              label="Outstanding"
+              value={formatMoney(finance.outstanding)}
+              tone={finance.outstanding > 0 ? 'warning' : 'neutral'}
+            />
+            <StatRow label="Receipts issued" value={finance.receipts} />
+          </div>
+        </div>
+      </Panel>
+
+      {/* 2. Payment attempts */}
+      <Panel title="Payment attempts" className="h-full flex flex-col justify-between">
+        <div className="flex-1 flex flex-col justify-between space-y-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[26px] font-semibold leading-none tabular-nums text-text">
+              {finance.payments.successRate}%
+            </span>
+            <span className="text-small text-text-muted">settlement rate</span>
+          </div>
+
+          <div className="space-y-1">
+            <StatRow label="Settled" value={finance.payments.successful} tone="success" />
+            <StatRow label="Declined" value={finance.payments.failed} tone={finance.payments.failed ? 'danger' : 'neutral'} />
+            <StatRow
+              label="In flight"
+              value={finance.payments.pending}
+              tone={finance.payments.pending ? 'info' : 'neutral'}
+            />
+            <StatRow
+              label="Cancelled"
+              value={finance.payments.cancelled}
+            />
+          </div>
+        </div>
+      </Panel>
+
+      {/* 3. Automated scrutiny */}
+      <Panel title="Automated scrutiny" className="h-full flex flex-col justify-between">
+        <div className="flex-1 flex flex-col justify-between space-y-3">
+          <DonutChart
+            totalLabel="Runs"
+            slices={[
+              { key: 'pass', label: 'Passed', value: scrutiny.passed, tone: 'success' },
+              { key: 'fail', label: 'Failed', value: scrutiny.failed, tone: 'danger' },
+              { key: 'running', label: 'Running', value: scrutiny.running, tone: 'info' },
+              { key: 'errored', label: 'Errored', value: scrutiny.errored, tone: 'warning' },
+            ]}
+            height={110}
+            className="!flex-col !items-center w-full"
+          />
+
+          <div className="space-y-1">
+            <StatRow
+              label="Correction due"
+              value={scrutiny.awaitingCorrection}
+              tone={scrutiny.awaitingCorrection ? 'warning' : 'neutral'}
+              href="/applications?bucket=scrutinyFailed"
+            />
+            <StatRow
+              label="Critical findings"
+              value={scrutiny.issues.critical}
+              tone={scrutiny.issues.critical ? 'danger' : 'neutral'}
+            />
+            <StatRow label="Major findings" value={scrutiny.issues.major} />
+          </div>
+        </div>
+      </Panel>
+
+      {/* 4. Shortfalls */}
+      <Panel
+        title="Shortfalls"
+        action={{ href: '/shortfalls', label: 'Register' }}
+        className="h-full flex flex-col justify-between"
+      >
+        <div className="flex-1 flex flex-col justify-between space-y-3">
+          <BarList
+            emptyLabel="No open shortfalls."
+            rows={[
+              { key: 'DOCUMENT', label: 'Document', value: shortfalls.byKind.DOCUMENT ?? 0, tone: 'info' },
+              { key: 'FEE', label: 'Fee', value: shortfalls.byKind.FEE ?? 0, tone: 'warning' },
+              { key: 'TECHNICAL', label: 'Technical', value: shortfalls.byKind.TECHNICAL ?? 0, tone: 'purple' },
+              { key: 'OTHER', label: 'Other', value: (shortfalls.byKind.CLARIFICATION ?? 0) + (shortfalls.byKind.OTHER ?? 0), tone: 'neutral' },
+            ]}
+          />
+
+          <div className="space-y-1">
+            <StatRow label="Open" value={shortfalls.open} tone={shortfalls.open ? 'warning' : 'neutral'} />
+            <StatRow label="Resolved" value={shortfalls.resolved} tone="success" />
+            <StatRow
+              label="Awaiting verdict"
+              value={shortfalls.awaitingReview}
+              tone={shortfalls.awaitingReview ? 'info' : 'neutral'}
+            />
+            <StatRow
+              label="Unnotified"
+              value={shortfalls.neverNotified}
+              tone={shortfalls.neverNotified ? 'danger' : 'neutral'}
+            />
+          </div>
+        </div>
+      </Panel>
+    </div>
   );
 }
 
@@ -398,58 +513,61 @@ export function AdminDashboard({
 
         <div className="xl:w-1/4 relative min-h-[400px] xl:min-h-0">
           <div className="xl:absolute xl:inset-0 w-full h-full">
-            <Panel title="Recent Activity" icon={Clock} className="h-full flex flex-col" bodyClassName="flex-1 overflow-y-auto pr-2 min-h-0">
+            <Panel title="Recent Activity" className="h-full flex flex-col" bodyClassName="flex-1 overflow-y-auto pr-2 min-h-0">
               <ActivityFeed entries={activity} />
             </Panel>
           </div>
         </div>
       </div>
 
-      <SectionHeading title="Department Review Desks" />
+      {/* ─── CHARTS & VISUAL ANALYTICS SECTION ─── */}
+      <SectionHeading title="Analytics & Visual Overview" />
 
-      <PipelineStrip
-        applicantSide={consolidated.applicantSide}
-        desks={consolidated.desks}
-        approved={applications.approved}
-        rejected={applications.rejected}
-      />
-
-      <DeskConsolidation desks={consolidated.desks} />
-
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
+        <PipelineStrip
+          applicantSide={consolidated.applicantSide}
+          desks={consolidated.desks}
+          approved={applications.approved}
+          rejected={applications.rejected}
+        />
         <ApplicantSidePanel applicantSide={consolidated.applicantSide} />
-        <Panel title="Officer Workload">
-          <WorkloadTable rows={data.workload} />
-        </Panel>
-      </div>
-
-      <AccountsPanel accounts={consolidated.accounts} />
-      <FilersPanel filers={consolidated.filers} />
-
-      <SectionHeading title="Analytics & Trends" />
-
-      <div className="grid gap-3 lg:grid-cols-2">
         <Panel
           title="Applications by status"
           action={{ href: '/applications', label: 'Open the register' }}
+          className="h-full flex flex-col justify-between"
+          bodyClassName="flex flex-col items-center justify-center flex-1"
         >
-          <DonutChart slices={statusSlices(data)} total={applications.total} totalLabel="Files" />
+          <DonutChart
+            slices={statusSlices(data)}
+            total={applications.total}
+            totalLabel="Files"
+            height={130}
+            className="!flex-col !items-center w-full"
+          />
         </Panel>
-
-        <Panel title="Applications by stage">
+        <Panel title="Applications by stage" className="h-full">
           <BarList rows={stageRows(data)} emptyLabel="No application has reached a stage yet." />
         </Panel>
       </div>
 
-      <Panel title="Volume over time">
-        <TrendChart data={data.trend} series={TREND_SERIES} />
-      </Panel>
+      <OperationsPanels data={data} />
 
-      <MoneyPanels data={data} />
-      <QualityPanels data={data} />
+      {/* ─── TABLES & BREAKDOWN LISTS SECTION ─── */}
+      <SectionHeading title="Department Review Desks & Tables" />
 
-      <ShortfallsByStage data={data} />
+      {/* Row 1: Department Desks & LTP Filers */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 items-stretch">
+        <DeskConsolidation desks={consolidated.desks} />
+        <FilersPanel filers={consolidated.filers} />
+      </div>
 
+      {/* Row 2: Officer Workload & User Accounts */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 items-stretch">
+        <Panel title="Officer Workload" className="h-full">
+          <WorkloadTable rows={data.workload} />
+        </Panel>
+        <AccountsPanel accounts={consolidated.accounts} />
+      </div>
     </div>
   );
 }
@@ -836,10 +954,6 @@ export function FinanceDashboard({ data }: { data: DashboardData }) {
         </Panel>
       </div>
 
-      <Panel title="Volume over time">
-        <TrendChart data={data.trend} series={TREND_SERIES} />
-      </Panel>
-
       <div className="grid gap-3 lg:grid-cols-2">
         <Panel title="Fee shortfalls">
           <StatRow
@@ -906,10 +1020,6 @@ export function ViewerDashboard({ data }: { data: DashboardData }) {
         </Panel>
       </div>
 
-      <Panel title="Volume over time">
-        <TrendChart data={data.trend} series={TREND_SERIES} />
-      </Panel>
-
       <QualityPanels data={data} />
 
       <Panel title="Recent activity" className="!-mt-3.5 bg-gradient-to-b from-blue-50/50 to-transparent border-blue-100 shadow-inner">
@@ -918,5 +1028,3 @@ export function ViewerDashboard({ data }: { data: DashboardData }) {
     </div>
   );
 }
-
-export { MoneyPanels, QualityPanels };

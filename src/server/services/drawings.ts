@@ -295,7 +295,7 @@ export async function uploadDrawing(user: AuthUser, input: UploadDrawingInput, m
     });
 
     return { drawingId: sheet.id, version };
-  });
+  }, { timeout: 30000, maxWait: 30000 });
 
   return result;
 }
