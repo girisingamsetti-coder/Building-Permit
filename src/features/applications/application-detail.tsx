@@ -131,14 +131,21 @@ export function ApplicationDetailView({
   const requested = searchParams.get('tab') ?? '';
   // An unavailable tab in the URL falls back to Overview rather than showing a
   // blank panel — deep links outlive the phases that made them valid.
-  const active =
+  const resolvedTab =
     isTabKey(requested) && tabs.some((t) => t.key === requested && t.available)
       ? requested
       : 'overview';
 
+  const [activeTab, setActiveTab] = React.useState(resolvedTab);
+
+  React.useEffect(() => {
+    setActiveTab(resolvedTab);
+  }, [resolvedTab]);
+
   const isDraft = application.status === 'DRAFT';
 
   function setTab(key: string) {
+    setActiveTab(key);
     const next = new URLSearchParams(searchParams.toString());
     if (key === 'overview') next.delete('tab');
     else next.set('tab', key);
@@ -170,7 +177,7 @@ export function ApplicationDetailView({
       {/* Visual Workflow Progress Tracker & SLA Metadata Bar */}
       <WorkflowStepperHeader application={application} workflow={workflow} />
 
-      <Tabs value={active} onValueChange={setTab}>
+      <Tabs value={activeTab} onValueChange={setTab}>
         <TabsList className="overflow-x-auto p-1.5 rounded-xl bg-surface-sunk/70 border border-border/80 gap-1.5 shadow-xs">
           {tabs.map((tab) =>
             tab.available ? (
