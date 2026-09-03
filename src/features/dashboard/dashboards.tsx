@@ -403,24 +403,27 @@ export function OperationsPanels({ data }: { data: DashboardData }) {
  * to be at the Commissioner's desk and the action to be recorded with an
  * actor, remarks and an audit row, exactly as it does for the Commissioner.
  */
-export function AdminDashboard({
+export function UnifiedDashboard({
   data,
   consolidated,
   activity,
+  deskSlot,
 }: {
   data: DashboardData;
-  /** What every other role would see, gathered for the one login that sees all. */
   consolidated: ConsolidatedView;
   activity: ActivityEntry[];
+  deskSlot?: React.ReactNode;
 }) {
   const { applications, finance, sla, shortfalls } = data;
 
   return (
     <div className="space-y-3.5">
+      {deskSlot}
+
       <div className="flex flex-col xl:flex-row gap-6">
         <div className="xl:w-3/4 space-y-5">
           <div className="space-y-1.5">
-            <SectionHeading title="Caseload" />
+            <SectionHeading title="Applications" />
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
               <KpiCard label="Total applications" value={applications.total} icon={Icon3DStack} href="/applications" tone="cyan" />
               <KpiCard
@@ -446,7 +449,7 @@ export function AdminDashboard({
           </div>
 
           <div className="space-y-1.5">
-            <SectionHeading title="Attention & SLA" />
+            <SectionHeading title="Workflow" />
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
               <KpiCard
                 label="Open shortfalls"
@@ -480,7 +483,7 @@ export function AdminDashboard({
           </div>
 
           <div className="space-y-1.5">
-            <SectionHeading title="Revenue & Finance" />
+            <SectionHeading title="Revenue" />
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
               <KpiCard
                 label="Fees generated"
@@ -573,6 +576,22 @@ export function AdminDashboard({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Super Admin — the whole system
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function AdminDashboard({
+  data,
+  consolidated,
+  activity,
+}: {
+  data: DashboardData;
+  consolidated: ConsolidatedView;
+  activity: ActivityEntry[];
+}) {
+  return <UnifiedDashboard data={data} consolidated={consolidated} activity={activity} />;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Executive — Director, Additional Commissioner, Commissioner
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -593,141 +612,58 @@ const EXECUTIVE_COPY: Record<ExecutiveRole, { desk: string; deskHint: string }> 
   },
 };
 
-/**
- * The senior desks.
- *
- * They share a shape because they ask the same question — what is waiting on
- * me, and how is the department doing — and differ only in the wording of the
- * first tile and in which stage counts as "mine".
- */
 export function ExecutiveDashboard({
   data,
+  consolidated,
+  activity,
   role,
   queue,
 }: {
   data: DashboardData;
+  consolidated: ConsolidatedView;
+  activity: ActivityEntry[];
   role: ExecutiveRole;
   queue: { total: number; mine: number; unclaimed: number; dueSoon: number; overdue: number };
 }) {
-  const { applications, sla, shortfalls, finance } = data;
   const copy = EXECUTIVE_COPY[role];
 
-  return (
-    <div className="space-y-3.5">
+  const deskSlot = (
+    <div className="space-y-1.5">
       <SectionHeading title="Your desk" />
-
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label={copy.desk} value={queue.total} hint={copy.deskHint} icon={Icon3DStack} href="/tasks" />
+        <KpiCard label={copy.desk} value={queue.total} hint={copy.deskHint} icon={Icon3DStack} href="/tasks" tone="blue" />
         <KpiCard
           label="Unclaimed"
           value={queue.unclaimed}
           icon={Icon3DFileEdit}
           href="/tasks?filter=new"
+          tone="amber"
         />
         <KpiCard
           label="Held by you"
           value={queue.mine}
           icon={Icon3DActivity}
           href="/tasks?filter=pending"
+          tone="indigo"
         />
         <KpiCard
           label="Overdue"
           value={queue.overdue}
           icon={Icon3DHourglass}
           href="/tasks?filter=overdue"
+          tone="red"
         />
       </div>
-
-      <SectionHeading title="Department Overview" />
-
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total applications" value={applications.total} icon={Icon3DStack} href="/applications" />
-        <KpiCard label="In progress" value={applications.inProgress} icon={Icon3DActivity} />
-        <KpiCard
-          label="Approved"
-          value={applications.approved}
-          icon={Icon3DShieldCheck}
-          href="/applications?bucket=approved"
-        />
-        <KpiCard
-          label="Average time to decide"
-          value={sla.averageDaysToClose === null ? '—' : `${sla.averageDaysToClose} d`}
-          icon={Icon3DGauge}
-        />
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Panel
-          title="Applications by status"
-          action={{ href: '/applications', label: 'Open the register' }}
-        >
-          <DonutChart slices={statusSlices(data)} total={applications.total} totalLabel="Files" />
-        </Panel>
-
-        <Panel title="Stage-wise pendency">
-          <BarList rows={stageRows(data)} emptyLabel="No application is in the pipeline." />
-        </Panel>
-      </div>
-
-      <Panel title="Approvals over time">
-        <TrendChart data={data.trend} series={TREND_SERIES} />
-      </Panel>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Panel title="Reported shortfalls">
-          <StatRow
-            label="Open — reported"
-            value={shortfalls.byMode.reported}
-            tone={shortfalls.byMode.reported ? 'warning' : 'neutral'}
-          />
-          <StatRow
-            label="Open — blocking"
-            value={shortfalls.byMode.blocking}
-            tone={shortfalls.byMode.blocking ? 'warning' : 'neutral'}
-          />
-          <StatRow label="Resolved" value={shortfalls.resolved} tone="success" />
-          <StatRow
-            label="Past due date"
-            value={shortfalls.overdue}
-            tone={shortfalls.overdue ? 'danger' : 'neutral'}
-          />
-          <div className="pt-3">
-            <BarList
-              emptyLabel="Nothing outstanding at any desk."
-              rows={shortfalls.byStage.map((s) => ({
-                key: s.code,
-                label: s.label,
-                value: s.count,
-                tone: 'warning' as Tone,
-              }))}
-            />
-          </div>
-        </Panel>
-
-        <Panel title="Collection">
-          <ProgressBar
-            value={finance.collected}
-            total={finance.generated}
-            tone="success"
-            label="Collected against demands raised"
-            valueLabel={`${formatMoney(finance.collected)} of ${formatMoney(finance.generated)}`}
-          />
-          <div className="mt-3">
-            <StatRow label="Demands issued" value={finance.demandsIssued} />
-            <StatRow
-              label="Outstanding"
-              value={formatMoney(finance.outstanding)}
-              tone={finance.outstanding > 0 ? 'warning' : 'neutral'}
-            />
-            <StatRow label="Payment success rate" value={`${finance.payments.successRate}%`} />
-          </div>
-        </Panel>
-      </div>
-
-      <Panel title="Recent activity" className="!-mt-3.5 bg-gradient-to-b from-blue-50/50 to-transparent border-blue-100 shadow-inner">
-        <ActivityFeed entries={data.activity} />
-      </Panel>
     </div>
+  );
+
+  return (
+    <UnifiedDashboard
+      data={data}
+      consolidated={consolidated}
+      activity={activity}
+      deskSlot={deskSlot}
+    />
   );
 }
 
@@ -738,11 +674,15 @@ export function ExecutiveDashboard({
 export function OfficerDashboard({
   summary,
   data,
+  consolidated,
+  activity,
   recent,
   roleLabel,
 }: {
   summary: { total: number; mine: number; unclaimed: number; dueSoon: number; overdue: number };
   data: DashboardData;
+  consolidated: ConsolidatedView;
+  activity: ActivityEntry[];
   roleLabel: string;
   recent: Array<{
     id: string;
@@ -756,111 +696,72 @@ export function OfficerDashboard({
     unclaimed: boolean;
   }>;
 }) {
-  const { shortfalls, finance, applications } = data;
-
-  return (
+  const deskSlot = (
     <div className="space-y-3.5">
-      <SectionHeading title={`${roleLabel} Desk Queue`} />
-
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="At your desk" value={summary.total} icon={ClipboardCheck} href="/tasks" />
-        <KpiCard
-          label="Unclaimed"
-          value={summary.unclaimed}
-          tone={summary.unclaimed ? 'info' : 'neutral'}
-          icon={ClipboardCheck}
-          href="/tasks?filter=new"
-        />
-        <KpiCard label="Held by you" value={summary.mine} icon={Clock} href="/tasks?filter=pending" />
-        <KpiCard
-          label="Overdue"
-          value={summary.overdue}
-          tone={summary.overdue ? 'danger' : 'neutral'}
-          icon={AlertTriangle}
-          href="/tasks?filter=overdue"
-        />
+      <div className="space-y-1.5">
+        <SectionHeading title={`${roleLabel} Desk Queue`} />
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+          <KpiCard label="At your desk" value={summary.total} icon={Icon3DStack} href="/tasks" tone="cyan" />
+          <KpiCard
+            label="Unclaimed"
+            value={summary.unclaimed}
+            tone={summary.unclaimed ? 'amber' : 'neutral'}
+            icon={Icon3DFileEdit}
+            href="/tasks?filter=new"
+          />
+          <KpiCard label="Held by you" value={summary.mine} tone="indigo" icon={Icon3DActivity} href="/tasks?filter=pending" />
+          <KpiCard
+            label="Overdue"
+            value={summary.overdue}
+            tone={summary.overdue ? 'red' : 'neutral'}
+            icon={Icon3DHourglass}
+            href="/tasks?filter=overdue"
+          />
+        </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      {recent.length > 0 && (
+        <Card>
           <CardHeader>
-            <CardTitle>Waiting longest</CardTitle>
+            <CardTitle>Waiting longest at your desk</CardTitle>
           </CardHeader>
-          <CardContent className={recent.length ? 'space-y-1 p-3' : 'p-0'}>
-            {recent.length ? (
-              recent.map((task) => (
-                <Link
-                  key={task.id}
-                  href={`/applications/${task.applicationId}?tab=workflow`}
-                  className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-lg px-2.5 py-2 transition-colors hover:bg-surface-sunk"
-                >
-                  <span className="min-w-0">
-                    <span className="font-medium tabular-nums text-text">{task.applicationNumber}</span>
-                    <span className="ml-2 text-small text-text-muted">{task.applicantName}</span>
+          <CardContent className="space-y-1 p-3">
+            {recent.map((task) => (
+              <Link
+                key={task.id}
+                href={`/applications/${task.applicationId}?tab=workflow`}
+                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-lg px-2.5 py-2 transition-colors hover:bg-surface-sunk"
+              >
+                <span className="min-w-0">
+                  <span className="font-medium tabular-nums text-text">{task.applicationNumber}</span>
+                  <span className="ml-2 text-small text-text-muted">{task.applicantName}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-2 text-caption">
+                  {task.unclaimed && <Badge tone="info">Unclaimed</Badge>}
+                  {task.slaStatus && task.slaStatus !== 'ON_TRACK' && (
+                    <Badge tone={statusMeta('sla', task.slaStatus).tone}>
+                      {statusMeta('sla', task.slaStatus).label}
+                    </Badge>
+                  )}
+                  <span className="tabular-nums text-text-muted">
+                    {task.daysPending} {task.daysPending === 1 ? 'day' : 'days'}
                   </span>
-                  <span className="flex shrink-0 items-center gap-2 text-caption">
-                    {task.unclaimed && <Badge tone="info">Unclaimed</Badge>}
-                    {task.slaStatus && task.slaStatus !== 'ON_TRACK' && (
-                      <Badge tone={statusMeta('sla', task.slaStatus).tone}>
-                        {statusMeta('sla', task.slaStatus).label}
-                      </Badge>
-                    )}
-                    <span className="tabular-nums text-text-muted">
-                      {task.daysPending} {task.daysPending === 1 ? 'day' : 'days'}
-                    </span>
-                  </span>
-                </Link>
-              ))
-            ) : (
-              <EmptyState
-                icon={ClipboardCheck}
-                title="Nothing at your desk"
-                description="Files arrive here when they reach a stage your role works at."
-              />
-            )}
+                </span>
+              </Link>
+            ))}
           </CardContent>
         </Card>
-
-        <Panel title="Shortfalls" action={{ href: '/shortfalls', label: 'Register' }}>
-          <StatRow
-            label="Open"
-            value={shortfalls.open}
-            tone={shortfalls.open ? 'warning' : 'neutral'}
-          />
-          <StatRow
-            label="Awaiting your verdict"
-            value={shortfalls.awaitingReview}
-            tone={shortfalls.awaitingReview ? 'info' : 'neutral'}
-          />
-          <StatRow label="Document" value={shortfalls.byKind.DOCUMENT ?? 0} />
-          <StatRow label="Fee" value={shortfalls.byKind.FEE ?? 0} />
-          <StatRow
-            label="Past due"
-            value={shortfalls.overdue}
-            tone={shortfalls.overdue ? 'danger' : 'neutral'}
-          />
-        </Panel>
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Panel title="Applications in your jurisdiction">
-          <BarList rows={stageRows(data)} emptyLabel="Nothing in your jurisdiction yet." />
-          <div className="mt-3">
-            <StatRow label="Total visible" value={applications.total} href="/applications" />
-            <StatRow label="Approved" value={applications.approved} tone="success" />
-            <StatRow
-              label="Fee outstanding"
-              value={formatMoney(finance.outstanding)}
-              tone={finance.outstanding > 0 ? 'warning' : 'neutral'}
-            />
-          </div>
-        </Panel>
-
-        <Panel title="Recent activity" className="!-mt-3.5 bg-gradient-to-b from-blue-50/50 to-transparent border-blue-100 shadow-inner">
-          <ActivityFeed entries={data.activity} />
-        </Panel>
-      </div>
+      )}
     </div>
+  );
+
+  return (
+    <UnifiedDashboard
+      data={data}
+      consolidated={consolidated}
+      activity={activity}
+      deskSlot={deskSlot}
+    />
   );
 }
 
@@ -868,163 +769,30 @@ export function OfficerDashboard({
 // Finance
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function FinanceDashboard({ data }: { data: DashboardData }) {
-  const { finance, applications } = data;
-
-  const demandSlices: Slice[] = [
-    { key: 'PAID', label: 'Paid', value: finance.byDemandStatus.PAID ?? 0, tone: 'success' },
-    { key: 'ISSUED', label: 'Issued, unpaid', value: finance.byDemandStatus.ISSUED ?? 0, tone: 'warning' },
-    {
-      key: 'PARTIALLY_PAID',
-      label: 'Partly paid',
-      value: finance.byDemandStatus.PARTIALLY_PAID ?? 0,
-      tone: 'info',
-    },
-    { key: 'DRAFT', label: 'Draft', value: finance.byDemandStatus.DRAFT ?? 0, tone: 'neutral' },
-    { key: 'CANCELLED', label: 'Cancelled', value: finance.byDemandStatus.CANCELLED ?? 0, tone: 'neutral' },
-    { key: 'WAIVED', label: 'Waived', value: finance.byDemandStatus.WAIVED ?? 0, tone: 'purple' },
-  ];
-
-  return (
-    <div className="space-y-3.5">
-      <SectionHeading title="Collection & Demands" />
-
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          label="Demands issued"
-          value={finance.demandsIssued}
-          hint={finance.shortfallDemands ? `${finance.shortfallDemands} from shortfalls` : undefined}
-          icon={Icon3DFileEdit}
-        />
-        <KpiCard
-          label="Total generated"
-          value={formatMoneyCompact(finance.generated)}
-          hint={formatMoney(finance.generated)}
-          icon={Icon3DCoins}
-        />
-        <KpiCard
-          label="Collected"
-          value={formatMoneyCompact(finance.collected)}
-          hint={`${finance.receipts} receipts`}
-          icon={Icon3DLandmark}
-          href="/payments"
-        />
-        <KpiCard
-          label="Outstanding"
-          value={formatMoneyCompact(finance.outstanding)}
-          icon={Icon3DCircleDollar}
-        />
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Panel title="Demands by status">
-          <DonutChart slices={demandSlices} totalLabel="Demands" />
-        </Panel>
-
-        <Panel
-          title="Payment attempts"
-          action={{ href: '/payments', label: 'Payments register' }}
-        >
-          <DonutChart
-            totalLabel="Attempts"
-            slices={[
-              { key: 'ok', label: 'Settled', value: finance.payments.successful, tone: 'success' },
-              { key: 'fail', label: 'Declined', value: finance.payments.failed, tone: 'danger' },
-              { key: 'open', label: 'In flight', value: finance.payments.pending, tone: 'info' },
-              {
-                key: 'gone',
-                label: 'Cancelled or timed out',
-                value: finance.payments.cancelled,
-                tone: 'neutral',
-              },
-            ]}
-            height={168}
-          />
-          <div className="mt-3">
-            <StatRow
-              label="Success rate"
-              value={`${finance.payments.successRate}%`}
-            />
-            <StatRow
-              label="Awaiting reconciliation"
-              value={finance.payments.pending}
-              tone={finance.payments.pending ? 'info' : 'neutral'}
-            />
-          </div>
-        </Panel>
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Panel title="Fee shortfalls">
-          <StatRow
-            label="Open fee shortfalls"
-            value={data.shortfalls.byKind.FEE ?? 0}
-            tone={(data.shortfalls.byKind.FEE ?? 0) ? 'warning' : 'neutral'}
-          />
-          <StatRow label="Supplementary demands raised" value={finance.shortfallDemands} />
-          <StatRow label="Applications approved" value={applications.approved} tone="success" />
-          <StatRow
-            label="Applications awaiting payment"
-            value={applications.byBucket.paymentPending ?? 0}
-            tone={(applications.byBucket.paymentPending ?? 0) ? 'warning' : 'neutral'}
-            href="/applications?bucket=paymentPending"
-          />
-        </Panel>
-
-        <Panel title="Recent activity" className="!-mt-3.5 bg-gradient-to-b from-blue-50/50 to-transparent border-blue-100 shadow-inner">
-          <ActivityFeed entries={data.activity} />
-        </Panel>
-      </div>
-    </div>
-  );
+export function FinanceDashboard({
+  data,
+  consolidated,
+  activity,
+}: {
+  data: DashboardData;
+  consolidated: ConsolidatedView;
+  activity: ActivityEntry[];
+}) {
+  return <UnifiedDashboard data={data} consolidated={consolidated} activity={activity} />;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Viewer / auditor
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function ViewerDashboard({ data }: { data: DashboardData }) {
-  const { applications, sla, shortfalls, finance } = data;
-
-  return (
-    <div className="space-y-3.5">
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total applications" value={applications.total} icon={Icon3DStack} href="/applications" />
-        <KpiCard label="In progress" value={applications.inProgress} icon={Icon3DActivity} />
-        <KpiCard label="Approved" value={applications.approved} icon={Icon3DShieldCheck} />
-        <KpiCard
-          label="Open shortfalls"
-          value={shortfalls.open}
-          icon={Icon3DAlertOctagon}
-        />
-        <KpiCard label="Fees collected" value={formatMoneyCompact(finance.collected)} icon={Icon3DLandmark} />
-        <KpiCard
-          label="Overdue tasks"
-          value={sla.overdue}
-          icon={Icon3DHourglass}
-        />
-        <KpiCard
-          label="Average time to decide"
-          value={sla.averageDaysToClose === null ? '—' : `${sla.averageDaysToClose} d`}
-          icon={Icon3DGauge}
-        />
-        <KpiCard label="Application types" value={applications.byType.length} icon={Icon3DStack} />
-      </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Panel title="Applications by status">
-          <DonutChart slices={statusSlices(data)} total={applications.total} totalLabel="Files" />
-        </Panel>
-        <Panel title="Where the files are">
-          <BarList rows={stageRows(data)} emptyLabel="Nothing in the pipeline." />
-        </Panel>
-      </div>
-
-      <QualityPanels data={data} />
-
-      <Panel title="Recent activity" className="!-mt-3.5 bg-gradient-to-b from-blue-50/50 to-transparent border-blue-100 shadow-inner">
-        <ActivityFeed entries={data.activity} />
-      </Panel>
-    </div>
-  );
+export function ViewerDashboard({
+  data,
+  consolidated,
+  activity,
+}: {
+  data: DashboardData;
+  consolidated: ConsolidatedView;
+  activity: ActivityEntry[];
+}) {
+  return <UnifiedDashboard data={data} consolidated={consolidated} activity={activity} />;
 }

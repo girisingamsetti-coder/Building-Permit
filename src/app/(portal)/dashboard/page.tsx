@@ -87,7 +87,12 @@ export default async function DashboardPage() {
 
   // ── The senior desks ──────────────────────────────────────────────────
   if (kind === 'executive') {
-    const [data, summary] = await Promise.all([dashboardData(user), taskSummary(user)]);
+    const [data, consolidated, activity, summary] = await Promise.all([
+      dashboardData(user),
+      consolidatedView(user),
+      recentActivity(user, 15),
+      taskSummary(user),
+    ]);
 
     const role: ExecutiveRole = roleKeys.includes(ROLES.COMMISSIONER)
       ? 'COMMISSIONER'
@@ -106,38 +111,54 @@ export default async function DashboardPage() {
             </Link>
           </Button>
         </div>
-        <ExecutiveDashboard data={data} role={role} queue={summary} />
+        <ExecutiveDashboard
+          data={data}
+          consolidated={consolidated}
+          activity={activity}
+          role={role}
+          queue={summary}
+        />
       </>
     );
   }
 
   // ── Finance ───────────────────────────────────────────────────────────
   if (kind === 'finance') {
-    const data = await dashboardData(user);
+    const [data, consolidated, activity] = await Promise.all([
+      dashboardData(user),
+      consolidatedView(user),
+      recentActivity(user, 15),
+    ]);
 
     return (
       <>
         <PageHeader title={greeting} />
-        <FinanceDashboard data={data} />
+        <FinanceDashboard data={data} consolidated={consolidated} activity={activity} />
       </>
     );
   }
 
   // ── Oversight ─────────────────────────────────────────────────────────
   if (kind === 'viewer') {
-    const data = await dashboardData(user);
+    const [data, consolidated, activity] = await Promise.all([
+      dashboardData(user),
+      consolidatedView(user),
+      recentActivity(user, 15),
+    ]);
 
     return (
       <>
         <PageHeader title={greeting} />
-        <ViewerDashboard data={data} />
+        <ViewerDashboard data={data} consolidated={consolidated} activity={activity} />
       </>
     );
   }
 
   // ── The review desks ──────────────────────────────────────────────────
-  const [data, summary, queue] = await Promise.all([
+  const [data, consolidated, activity, summary, queue] = await Promise.all([
     dashboardData(user),
+    consolidatedView(user),
+    recentActivity(user, 15),
     taskSummary(user),
     listTasks(user, { sort: 'received', dir: 'asc', pageSize: 6 }),
   ]);
@@ -158,6 +179,8 @@ export default async function DashboardPage() {
       <OfficerDashboard
         summary={summary}
         data={data}
+        consolidated={consolidated}
+        activity={activity}
         roleLabel={ROLE_LABELS[roleKeys[0] as RoleKey] ?? 'review'}
         recent={serialize(queue.rows) as Parameters<typeof OfficerDashboard>[0]['recent']}
       />
