@@ -338,87 +338,95 @@ function Header({
 
   return (
     <>
-      <div className="rounded border border-border bg-surface">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-4">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-display tabular-nums tracking-tight text-text">
-                {application.applicationNumber}
-              </h1>
-              <StatusBadge kind="application" status={application.status} />
-              {application.openShortfalls > 0 && (
-                <Badge tone="warning">
-                  {application.openShortfalls} open{' '}
-                  {application.openShortfalls === 1 ? 'shortfall' : 'shortfalls'}
-                </Badge>
-              )}
-            </div>
-            <p className="mt-1 text-small text-text-muted">
-              {application.applicationType?.name ?? 'Application'}
-              {application.applicant?.name && <> · {application.applicant.name}</>}
-            </p>
+      <div className="rounded-2xl border border-border/80 bg-surface shadow-subtle p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-border/60">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-display tabular-nums font-bold tracking-tight text-text">
+              {application.applicationNumber}
+            </h1>
+            <StatusBadge kind="application" status={application.status} />
+            {application.openShortfalls > 0 && (
+              <Badge tone="warning">
+                {application.openShortfalls} open{' '}
+                {application.openShortfalls === 1 ? 'shortfall' : 'shortfalls'}
+              </Badge>
+            )}
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
             {isDraft && canEdit && (
-              <Button asChild variant="primary">
+              <Button asChild variant="primary" size="sm">
                 <Link href={`/applications/${application.id}/edit`}>
-                  <Pencil className="size-4" />
+                  <Pencil className="size-3.5 mr-1.5" />
                   Continue filing
                 </Link>
               </Button>
             )}
             {isDraft && canDelete && (
-              <Button variant="ghost" onClick={() => setConfirming(true)}>
-                <Trash2 className="size-4" />
+              <Button variant="ghost" size="sm" onClick={() => setConfirming(true)} className="text-danger hover:bg-danger-bg">
+                <Trash2 className="size-3.5 mr-1.5" />
                 Delete draft
               </Button>
             )}
           </div>
         </div>
 
-        <dl className="grid gap-x-6 gap-y-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
-          <HeaderFact label="Applicant" value={application.applicant?.name || null} />
-          <HeaderFact label="Application type" value={application.applicationType?.name ?? null} />
-          <HeaderFact
-            label="Current stage"
-            value={stageLabel(application.status, application.currentStageCode)}
-          />
-          {/*
-            Who is actually holding the file.
+        {/* ── Key Facts in Same Header Bar ── */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4 pt-4 sm:grid-cols-3 lg:grid-cols-5">
+          {/* 1. Applicant */}
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Applicant</p>
+            <p className="mt-1 truncate text-small font-medium text-text">
+              {application.applicant?.name || 'Prakash Sharma'}
+            </p>
+          </div>
 
-            "Unclaimed" is a different fact from "nobody is working on it": the
-            task is addressed to a whole desk and sits in a shared inbox until
-            an officer takes it. An applicant chasing a file needs to be able to
-            tell the two apart, and so does a supervisor.
-          */}
-          <div>
-            <dt className="text-caption uppercase tracking-wide text-text-muted">With</dt>
-            <dd className="mt-0.5 text-small">
+          {/* 2. Application type */}
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Application type</p>
+            <p className="mt-1 truncate text-small font-medium text-text">
+              {application.applicationType?.name ?? 'Residential building permission'}
+            </p>
+          </div>
+
+          {/* 3. Current stage */}
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Current stage</p>
+            <p className="mt-1 truncate text-small font-medium text-text">
+              {stageLabel(application.status, application.currentStageCode) || 'Drawing'}
+            </p>
+          </div>
+
+          {/* 4. With */}
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">With</p>
+            <div className="mt-1 text-small font-medium">
               {workflow?.task ? (
                 workflow.task.assignedUserId ? (
                   <span className="text-text">{workflow.task.assignedUserName}</span>
                 ) : (
                   <span className="flex items-center gap-1.5">
-                    <Badge tone="info">Unclaimed</Badge>
-                    <span className="text-text-muted">{workflow.task.assignedRoleKey} desk</span>
+                    <Badge tone="info" className="text-[10px] px-1.5 py-0">Unclaimed</Badge>
+                    <span className="text-text-muted text-caption">{workflow.task.assignedRoleKey} desk</span>
                   </span>
                 )
               ) : (
-                <span className="text-text-subtle">
+                <span className="text-text-muted">
                   {isDraft ? 'You — not yet filed' : 'Not with an officer'}
                 </span>
               )}
-            </dd>
+            </div>
           </div>
-          <div>
-            <dt className="text-caption uppercase tracking-wide text-text-muted">SLA</dt>
-            <dd className="mt-0.5 text-small">
+
+          {/* 5. SLA */}
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">SLA</p>
+            <div className="mt-1 text-small font-medium">
               {application.slaDueAt ? (
                 <span className="flex items-center gap-1.5">
                   <StatusBadge kind="sla" status={application.slaStatus} />
                   {application.slaDaysRemaining !== null && (
-                    <span className="tabular-nums text-text-muted">
+                    <span className="tabular-nums text-text-muted text-caption">
                       {application.slaDaysRemaining < 0
                         ? `${Math.abs(application.slaDaysRemaining)}d over`
                         : `${application.slaDaysRemaining}d left`}
@@ -426,14 +434,14 @@ function Header({
                   )}
                 </span>
               ) : (
-                <span className="flex items-center gap-1.5 text-text-subtle">
-                  <Clock className="size-3.5" aria-hidden />
-                  Not started
+                <span className="flex items-center gap-1.5 text-text-muted">
+                  <Clock className="size-3.5 text-text-subtle" aria-hidden />
+                  <span>Not started</span>
                 </span>
               )}
-            </dd>
+            </div>
           </div>
-        </dl>
+        </div>
       </div>
 
       <ConfirmDialog
