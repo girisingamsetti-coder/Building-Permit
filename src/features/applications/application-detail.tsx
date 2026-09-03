@@ -3,7 +3,19 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Lock, Pencil, Trash2, Clock, CircleCheck, ArrowRight } from 'lucide-react';
+import {
+  Lock,
+  Pencil,
+  Trash2,
+  Clock,
+  CircleCheck,
+  ArrowRight,
+  UploadCloud,
+  FileText,
+  Layers,
+  History,
+  AlertTriangle,
+} from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,6 +51,7 @@ import type {
   Shortfall,
   WorkflowState,
 } from '@/features/workflow/types';
+import { WorkflowStepperHeader } from '@/components/common/workflow-stepper-header';
 import type { ApplicationDetail as Detail, ApplicationMeta, TimelineEvent } from './types';
 
 /**
@@ -154,24 +167,36 @@ export function ApplicationDetailView({
       */}
       <ShortfallBanner shortfalls={openShortfalls} viewerIsApplicant={viewerIsApplicant} />
 
+      {/* Visual Workflow Progress Tracker & SLA Metadata Bar */}
+      <WorkflowStepperHeader application={application} workflow={workflow} />
+
       <Tabs value={active} onValueChange={setTab}>
-        <TabsList className="overflow-x-auto">
+        <TabsList className="overflow-x-auto p-1.5 rounded-xl bg-surface-sunk/70 border border-border/80 gap-1.5 shadow-xs">
           {tabs.map((tab) =>
             tab.available ? (
-              <TabsTrigger key={tab.key} value={tab.key}>
-                {tab.label}
+              <TabsTrigger
+                key={tab.key}
+                value={tab.key}
+                className="gap-2 px-3.5 py-2 text-caption sm:text-small font-medium text-text-muted rounded-lg transition-all data-[state=active]:bg-surface data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm data-[state=active]:font-semibold"
+              >
+                {tab.key === 'overview' && <FileText className="size-3.5" />}
+                {tab.key === 'workflow' && <Clock className="size-3.5" />}
+                {tab.key === 'drawings' && <UploadCloud className="size-3.5" />}
+                {tab.key === 'documents' && <Layers className="size-3.5" />}
+                {tab.key === 'fees' && <FileText className="size-3.5" />}
+                {tab.key === 'payments' && <FileText className="size-3.5" />}
+                {tab.key === 'shortfalls' && <AlertTriangle className="size-3.5" />}
+                {tab.key === 'audit' && <History className="size-3.5" />}
+                <span>{tab.label}</span>
               </TabsTrigger>
             ) : (
-              // The tooltip wraps a SPAN, not the disabled trigger: a disabled
-              // element receives no pointer events, so a tooltip attached to it
-              // never fires and the explanation never arrives.
               <Tooltip key={tab.key}>
                 <TooltipTrigger asChild>
                   <span className="inline-flex">
                     <TabsTrigger
                       value={tab.key}
                       disabled
-                      className="cursor-not-allowed gap-1.5 opacity-50"
+                      className="cursor-not-allowed gap-1.5 opacity-50 px-3 py-1.5 text-caption"
                     >
                       {tab.label}
                       <Lock className="size-3" aria-hidden />
