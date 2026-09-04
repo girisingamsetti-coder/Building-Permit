@@ -432,22 +432,13 @@ async function main() {
   // SCRUTINY_QUEUED goes LAST, and that ordering is load-bearing rather than
   // cosmetic: those two files rest with their scrutiny run still in the queue,
   // and any later application's `drainJobs()` would run it and move them on.
-  // ── Override PLAN for exactly 49 total with 26 approved ───────────────
-  for (const p of PLAN) { p.count = 0; }
-  const counts: Record<string, number> = {
-    APPROVED: 32,
-    DRAFT_LATE: 2, SUBMITTED: 2, DRAWING_UPLOADED: 2, SCRUTINY_QUEUED: 2,
-    SCRUTINY_FAILED: 2, SCRUTINY_PASSED: 2, DOCUMENTS_PARTIAL: 2,
-    FEE_GENERATED: 2, PAYMENT_PENDING: 2, PAYMENT_FAILED: 2,
-    TPA_UNCLAIMED: 2, TPA_CLAIMED: 2, TPA_DOCUMENT_SHORTFALL: 2, TPA_FEE_SHORTFALL: 2,
-    ZAD_UNCLAIMED: 1, ZAD_CLAIMED: 1, ZAD_SHORTFALL: 1,
-    ZJD_UNCLAIMED: 1, ZJD_FEE_SHORTFALL: 1,
-    DIRECTOR_UNCLAIMED: 1, ADDL_COMMISSIONER_UNCLAIMED: 1, COMMISSIONER_UNCLAIMED: 1,
-    REJECTED: 1
-  };
-  for (const [stop, count] of Object.entries(counts)) {
-    const p = PLAN.find(x => x.stop === stop);
-    if (p) p.count = count;
+  // ── Ensure at least 65% are approved and every card has some data ───────────────
+  for (const p of PLAN) {
+    if (p.stop === 'APPROVED') {
+      p.count = 60;
+    } else {
+      p.count = 1;
+    }
   }
 
   const items = planItems().sort((a, b) => {
